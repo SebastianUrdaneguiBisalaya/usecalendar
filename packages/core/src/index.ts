@@ -39,3 +39,4 @@ export {
   sweepRange,
   wallTime,
 } from "./reschedule.js";
+export { visibleDayRange, visibleRange } from "./visible-range.js";
