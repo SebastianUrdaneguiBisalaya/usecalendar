@@ -190,7 +190,7 @@ Port behavior and visuals faithfully; replace every tempi-specific dependency wi
   - **Dark mode lives in the tokens, not in `dark:` variants.** `theme.css` switches the tokens on `.dark` / `[data-theme="dark"]`, or on the OS preference unless `.light` / `[data-theme="light"]` opts out. Components must not use `dark:` utilities and the library must not define `@custom-variant dark`, which would override the host's.
   - Fonts are inherited from the host app.
 - **Accessibility is part of the port.** Keep tempi's ARIA grid semantics, roving focus, keyboard shortcuts and screen-reader labels.
-- **Time.** Dates use the global `Temporal` API (`Temporal.PlainDate`, `Temporal.ZonedDateTime`); event times are ISO 8601 instants. No polyfill is bundled; the README documents loading `temporal-polyfill/global` on runtimes without native `Temporal`.
+- **Time.** Dates use the global `Temporal` API (`Temporal.PlainDate`, `Temporal.ZonedDateTime`); event times are ISO 8601 instants with an offset, always compared by time (`Date.parse` / `Temporal.Instant.compare`), never as text. No polyfill is bundled or imported from `src/`; the README documents loading `temporal-polyfill/global` on runtimes without native `Temporal` (Node 24 included). Tests load it through each package's vitest `setupFiles` (`tests/setup.ts`), with `temporal-polyfill` as a devDependency only.
 
 ## Documentation for consumers
 
