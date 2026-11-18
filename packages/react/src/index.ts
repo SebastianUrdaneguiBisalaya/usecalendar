@@ -24,6 +24,15 @@ export type {
   EventVariant,
 } from "./events/event-style.js";
 export { eventLook, eventSurfaceProps, isPast } from "./events/event-style.js";
+export type {
+  CalendarHotkeyHandlers,
+  CalendarHotkeysScope,
+  UseCalendarHotkeysOptions,
+} from "./hotkeys/use-calendar-hotkeys.js";
+export {
+  shouldIgnoreHotkey,
+  useCalendarHotkeys,
+} from "./hotkeys/use-calendar-hotkeys.js";
 export type { CalendarFormatters, FormatContext } from "./locale/formatters.js";
 export { DEFAULT_FORMATTERS, localeTimeFormat } from "./locale/formatters.js";
 export type { CalendarLabels, CalendarLabelsInput } from "./locale/labels.js";
