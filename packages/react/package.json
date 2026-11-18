@@ -85,6 +85,7 @@
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "tailwindcss": "4.3.5",
+    "temporal-polyfill": "1.0.8",
     "tsup": "8.5.1",
     "typescript": "6.0.3",
     "vitest": "4.1.11"
