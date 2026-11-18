@@ -100,7 +100,11 @@ This is achieved by:
 
 - **Minimal runtime dependencies.** Every dependency added to `dependencies` is inherited by every consumer. Prefer platform APIs (`Intl`, `Temporal`, the HTML Popover API, native pointer events) before adding a package. The approved runtime dependencies are `clsx` and `tailwind-merge` in framework adapters; anything else must be discussed in an issue first.
 - **Framework packages are `peerDependencies`.** `react`/`react-dom` are never bundled or listed in `dependencies`.
-- **Pin every dependency to an exact version.** Always install with `pnpm add -E <package>` (`-D -E` for dev dependencies). `peerDependencies` use ranges.
+- **Version ranges depend on who installs the dependency:**
+  - `devDependencies` (and the root `package.json`) are **pinned to an exact version**: always `pnpm add -D -E <package>`. They only run in this repo, so builds stay reproducible.
+  - Published runtime `dependencies` (e.g. `clsx`, `tailwind-merge`) use a **caret range** from the tested version: `pnpm add <package>` → `"^3.7.0"`. Consumers' package managers can then reuse a compatible copy the app already has instead of installing a duplicate. Reproducibility for this repo comes from `pnpm-lock.yaml`, which CI installs with `--frozen-lockfile`.
+  - Internal workspace dependencies use `workspace:*`; pnpm replaces it with the exact version on publish, so `@usecalendar/react` always pairs with the `@usecalendar/core` it was released with.
+  - `peerDependencies` (`react`, `react-dom`) use the widest range that is supported (`>=19.0.0`).
 - **`sideEffects: false`** in `package.json` unless the package ships a stylesheet (list it in `sideEffects` then), to allow tree-shaking.
 - Never log to `console` inside the library except behind an explicit debug flag controlled by the consumer.
 - Don't throw generic exceptions (`throw new Error("something failed")`): define and export your own error types so the consumer can do `instanceof` and handle specific cases.
