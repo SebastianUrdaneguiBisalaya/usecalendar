@@ -75,8 +75,8 @@
   },
   "dependencies": {
     "@usecalendar/core": "workspace:*",
-    "clsx": "2.1.1",
-    "tailwind-merge": "3.7.0"
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
     "@tailwindcss/cli": "4.3.5",

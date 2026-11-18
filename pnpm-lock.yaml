@@ -137,10 +137,10 @@ importers:
         specifier: workspace:*
         version: link:../core
       clsx:
-        specifier: 2.1.1
+        specifier: ^2.1.1
         version: 2.1.1
       tailwind-merge:
-        specifier: 3.7.0
+        specifier: ^3.7.0
         version: 3.7.0
     devDependencies:
       '@tailwindcss/cli':
