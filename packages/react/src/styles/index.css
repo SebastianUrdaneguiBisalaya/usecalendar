@@ -1,0 +1,15 @@
+/*
+ * Prebuilt stylesheet for apps that don't use Tailwind CSS: `import "@usecalendar/react/styles.css";`
+ *
+ * It contains only the utilities the components use plus the theme tokens. Tailwind's preflight (global
+ * reset) is left out on purpose, so importing it never restyles the rest of the host page.
+ * Tailwind v4 apps should import `@usecalendar/react/theme.css` instead (see theme.css).
+ */
+
+@layer theme, base, components, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+@import "./theme.css";
+
+@source "../";

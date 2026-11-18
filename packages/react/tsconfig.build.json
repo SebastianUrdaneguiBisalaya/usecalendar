@@ -1,0 +1,12 @@
+{
+  // Build-only config: drops the `paths` alias so tsup resolves `@usecalendar/core` as an external
+  // package (from its built dist) instead of inlining core's source into this bundle.
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "paths": {}
+  },
+  "extends": "./tsconfig.json",
+  "include": [
+    "src"
+  ]
+}

@@ -100,7 +100,11 @@ This is achieved by:
 
 - **Minimal runtime dependencies.** Every dependency added to `dependencies` is inherited by every consumer. Prefer platform APIs (`Intl`, `Temporal`, the HTML Popover API, native pointer events) before adding a package. The approved runtime dependencies are `clsx` and `tailwind-merge` in framework adapters; anything else must be discussed in an issue first.
 - **Framework packages are `peerDependencies`.** `react`/`react-dom` are never bundled or listed in `dependencies`.
-- **Pin every dependency to an exact version.** Always install with `pnpm add -E <package>` (`-D -E` for dev dependencies). `peerDependencies` use ranges.
+- **Version ranges depend on who installs the dependency:**
+  - `devDependencies` (and the root `package.json`) are **pinned to an exact version**: always `pnpm add -D -E <package>`. They only run in this repo, so builds stay reproducible.
+  - Published runtime `dependencies` (e.g. `clsx`, `tailwind-merge`) use a **caret range** from the tested version: `pnpm add <package>` → `"^3.7.0"`. Consumers' package managers can then reuse a compatible copy the app already has instead of installing a duplicate. Reproducibility for this repo comes from `pnpm-lock.yaml`, which CI installs with `--frozen-lockfile`.
+  - Internal workspace dependencies use `workspace:*`; pnpm replaces it with the exact version on publish, so `@usecalendar/react` always pairs with the `@usecalendar/core` it was released with.
+  - `peerDependencies` (`react`, `react-dom`) use the widest range that is supported (`>=19.0.0`).
 - **`sideEffects: false`** in `package.json` unless the package ships a stylesheet (list it in `sideEffects` then), to allow tree-shaking.
 - Never log to `console` inside the library except behind an explicit debug flag controlled by the consumer.
 - Don't throw generic exceptions (`throw new Error("something failed")`): define and export your own error types so the consumer can do `instanceof` and handle specific cases.
@@ -176,9 +180,15 @@ Port behavior and visuals faithfully; replace every tempi-specific dependency wi
 - **Props over app state.** Every behavior is controllable: stateful props come in controlled (`view` + `onViewChange`) and uncontrolled (`defaultView`) forms.
 - **Generic event data.** The public event type is `CalendarEvent<TData>`; callbacks hand back the consumer's own `data` untouched.
 - **Styling contract.**
-  - Components ship Tailwind CSS v4 utility classes; consumers include the package in Tailwind's `@source`.
+  - Components are styled with Tailwind CSS v4 utility classes written as full literal strings (never built dynamically, or Tailwind can't detect them).
+  - `@usecalendar/react` ships two stylesheets built from `packages/react/src/styles/`:
+    - `theme.css` for Tailwind v4 apps (`@import "@usecalendar/react/theme.css"`): tokens + `@theme` mapping + `@source` of the compiled components.
+    - `styles.css` for apps without Tailwind: prebuilt utilities + tokens, **without** Tailwind's preflight so it never resets the host page.
   - Every component accepts `className` (root) and `classNames` (per-part slots), merged with `cn()` (`clsx` + `tailwind-merge`) so consumer classes always win.
-  - Colors, radius and borders come from CSS variables (`--uc-*`) that fall back to shadcn tokens, so the calendar matches a shadcn app with zero config. Fonts are inherited from the host app.
+  - Colors and radius come only from the `--uc-*` tokens, exposed as `uc-*` Tailwind colors (`bg-uc-background`, `text-uc-muted-foreground`, `rounded-uc`, …). Never hard-code palette colors (`bg-white`, `text-zinc-500`) in components.
+  - Each token falls back to the matching shadcn token (`--background`, `--primary`, …), so the calendar matches a shadcn app, including its dark mode, with zero config.
+  - **Dark mode lives in the tokens, not in `dark:` variants.** `theme.css` switches the tokens on `.dark` / `[data-theme="dark"]`, or on the OS preference unless `.light` / `[data-theme="light"]` opts out. Components must not use `dark:` utilities and the library must not define `@custom-variant dark`, which would override the host's.
+  - Fonts are inherited from the host app.
 - **Accessibility is part of the port.** Keep tempi's ARIA grid semantics, roving focus, keyboard shortcuts and screen-reader labels.
 - **Time.** Dates use the global `Temporal` API (`Temporal.PlainDate`, `Temporal.ZonedDateTime`); event times are ISO 8601 instants. No polyfill is bundled; the README documents loading `temporal-polyfill/global` on runtimes without native `Temporal`.
 

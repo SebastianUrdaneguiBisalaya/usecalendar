@@ -1,0 +1,29 @@
+{
+  // React adapter: the shared base plus DOM types and the automatic JSX runtime.
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": [
+      "ES2023",
+      "ESNext.Temporal",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    // Type-check against core's source so `typecheck` doesn't need core to be built first.
+    // Declarations keep the `@usecalendar/core` specifier, so published types still import the package.
+    "paths": {
+      "@usecalendar/core": [
+        "../core/src/index.ts"
+      ]
+    }
+  },
+  "exclude": [
+    "node_modules",
+    "dist"
+  ],
+  "extends": "../../tsconfig.base.json",
+  "include": [
+    "src",
+    "tests"
+  ]
+}
