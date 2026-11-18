@@ -1,9 +1,17 @@
 {
-  "name": "node-sdk-template",
+  "name": "usecalendar",
   "version": "0.0.0",
-  "description": "Monorepo workspace root: Node.js SDK template (packages/core) + docs website (apps/website).",
+  "description": "Monorepo for usecalendar: a Google Calendar-style calendar UI library (framework-agnostic core + React adapter).",
   "license": "ISC",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SebastianUrdaneguiBisalaya/usecalendar.git"
+  },
+  "author": {
+    "name": "Sebastian Marat Urdanegui Bisalaya",
+    "url": "https://sebastianurdanegui.com"
+  },
   "scripts": {
     "build": "pnpm --filter ./packages/* run build",
     "dev": "pnpm --filter ./packages/core run dev",
@@ -15,10 +23,6 @@
     "test:watch": "pnpm --filter ./packages/core run test:watch",
     "prepare": "husky"
   },
-  "author": {
-    "name": "Sebastian Marat Urdanegui Bisalaya",
-    "url": "https://sebastianurdanegui.com"
-  },
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
@@ -26,7 +30,7 @@
     }
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.11",

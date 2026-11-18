@@ -34,7 +34,6 @@
   },
   "linter": {
     "domains": {
-      "next": "recommended",
       "react": "recommended"
     },
     "enabled": true,
@@ -59,18 +58,6 @@
         "package.json",
         "**/package.json"
       ]
-    },
-    {
-      "includes": [
-        "apps/*/public/**"
-      ],
-      "linter": {
-        "rules": {
-          "a11y": {
-            "noSvgWithoutTitle": "off"
-          }
-        }
-      }
     }
   ],
   "vcs": {

@@ -5,7 +5,11 @@
     "declarationMap": true,
     "exactOptionalPropertyTypes": true,
     "isolatedModules": true,
-    "jsx": "react-jsx",
+    // Browser + SSR library: ES2023 plus the Temporal API, no Node or DOM types in core.
+    "lib": [
+      "ES2023",
+      "ESNext.Temporal"
+    ],
     // File Layout
     // "rootDir": "./src",
     // "outDir": "./dist",
@@ -28,10 +32,6 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "skipLibCheck": true,
-    // For nodejs:
-    // "lib": ["esnext"],
-    // "types": ["node"],
-    // and npm install -D @types/node
 
     // Other Outputs
     "sourceMap": true,
