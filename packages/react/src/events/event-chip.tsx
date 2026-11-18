@@ -5,13 +5,13 @@ import { type EventLook, eventSurfaceProps } from "./event-style.js";
 /** Class names for each part of an {@link EventChip}, merged after the defaults so they win. */
 export type EventChipClassNames = {
   /** The colored dot of a timed event (not drawn for bars). */
-  dot?: string;
+  dot?: string | undefined;
   /** The outer element. */
-  root?: string;
+  root?: string | undefined;
   /** The start time of a timed event (not drawn for bars). */
-  time?: string;
+  time?: string | undefined;
   /** The event title. */
-  title?: string;
+  title?: string | undefined;
 };
 
 /** Props of {@link EventChip}. */
@@ -21,29 +21,29 @@ export type EventChipProps<TData = unknown> = {
    *
    * @defaultValue false
    */
-  bar?: boolean;
+  bar?: boolean | undefined;
   /** Extra classes for the root element, merged after the defaults. */
-  className?: string;
+  className?: string | undefined;
   /** Extra classes per part. */
-  classNames?: EventChipClassNames;
+  classNames?: EventChipClassNames | undefined;
   /**
    * Overrides the event's color.
    *
    * @defaultValue `event.color`, else the theme's muted foreground
    */
-  color?: string;
+  color?: string | undefined;
   /**
    * The event continues in the next row/day: its right corners are squared.
    *
    * @defaultValue false
    */
-  continuesAfter?: boolean;
+  continuesAfter?: boolean | undefined;
   /**
    * The event started in a previous row/day: its left corners are squared.
    *
    * @defaultValue false
    */
-  continuesBefore?: boolean;
+  continuesBefore?: boolean | undefined;
   event: CalendarEvent<TData>;
   /** How the event reads at a glance (past, tentative); see `eventLook`. */
   look: EventLook;
@@ -52,9 +52,9 @@ export type EventChipProps<TData = unknown> = {
    *
    * @defaultValue 1
    */
-  span?: number;
+  span?: number | undefined;
   /** Start time of a timed event, already formatted (e.g. `"9:30 AM"`). Hidden on small screens. */
-  time?: string;
+  time?: string | undefined;
 };
 
 /**
