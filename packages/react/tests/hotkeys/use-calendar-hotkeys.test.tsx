@@ -175,3 +175,61 @@ describe("useCalendarHotkeys", () => {
     expect(result.current.date?.toString()).toBe("2026-11-15");
   });
 });
+
+describe("several calendars on the document", () => {
+  const twoCalendars = () => {
+    const first = document.body.appendChild(document.createElement("div"));
+    const second = document.body.appendChild(document.createElement("div"));
+    const firstButton = first.appendChild(document.createElement("button"));
+    const secondButton = second.appendChild(document.createElement("button"));
+    const a = render({
+      target: {
+        current: first,
+      },
+    });
+    const b = render({
+      target: {
+        current: second,
+      },
+    });
+    return {
+      a,
+      b,
+      firstButton,
+      secondButton,
+    };
+  };
+
+  it("lets only one calendar handle each key: the one mounted last, until the user interacts", () => {
+    const { a, b } = twoCalendars();
+    press("j");
+    expect(a.result.current.date?.toString()).toBe("2026-11-15");
+    expect(b.result.current.date?.toString()).toBe("2026-11-22");
+  });
+
+  it("follows the calendar the user last clicked or focused", () => {
+    const { a, b, firstButton, secondButton } = twoCalendars();
+    act(() => {
+      firstButton.dispatchEvent(
+        new Event("pointerdown", {
+          bubbles: true,
+        }),
+      );
+    });
+    press("j");
+    expect(a.result.current.date?.toString()).toBe("2026-11-22");
+    expect(b.result.current.date?.toString()).toBe("2026-11-15");
+    act(() => secondButton.focus());
+    press("j");
+    expect(b.result.current.date?.toString()).toBe("2026-11-22");
+    expect(a.result.current.date?.toString()).toBe("2026-11-22");
+  });
+
+  it("falls back to the remaining calendar when the active one unmounts", () => {
+    const { a, b, secondButton } = twoCalendars();
+    act(() => secondButton.focus());
+    b.unmount();
+    press("j");
+    expect(a.result.current.date?.toString()).toBe("2026-11-22");
+  });
+});

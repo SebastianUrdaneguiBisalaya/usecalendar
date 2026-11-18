@@ -1,4 +1,22 @@
-import type { CalendarView } from "@usecalendar/core";
+import type { CalendarView, GridHotkeyAction } from "@usecalendar/core";
+
+/**
+ * The keys bound to each event action, spelled out (e.g. `"Alt+Up Arrow"`); actions turned off are missing.
+ */
+export type EventKeyboardKeys = Partial<
+  Record<
+    Extract<
+      GridHotkeyAction,
+      | "extendEvent"
+      | "moveEventDown"
+      | "moveEventToNextDay"
+      | "moveEventToPreviousDay"
+      | "moveEventUp"
+      | "shortenEvent"
+    >,
+    string
+  >
+>;
 
 /**
  * Every text the calendar renders that isn't a date or time: visible labels and screen-reader text.
@@ -12,8 +30,11 @@ export type CalendarLabels = {
   allDayEvents: (titles: readonly string[]) => string;
   /** Button that collapses the all-day lane back to two rows. */
   collapseAllDay: string;
-  /** Screen-reader hint on a focused event in the time grid, describing its keyboard shortcuts. */
-  eventKeyboardHint: string;
+  /**
+   * Screen-reader hint on a focused event in the time grid, built from the keys actually bound to each event
+   * action (remapped or turned-off shortcuts are reflected).
+   */
+  eventKeyboardHint: (keys: EventKeyboardKeys) => string;
   /** Button that shows every row of the all-day lane. */
   expandAllDay: string;
   /** Accessible name of the calendar grid. */
@@ -38,8 +59,20 @@ export type CalendarLabels = {
 export const DEFAULT_LABELS: CalendarLabels = {
   allDayEvents: (titles) => `All-day: ${titles.join(", ")}`,
   collapseAllDay: "Show fewer all-day events",
-  eventKeyboardHint:
-    "Alt plus arrows move it, Alt plus Shift plus up or down arrow changes its end.",
+  eventKeyboardHint: (keys) => {
+    const either = (...names: (string | undefined)[]) =>
+      names.filter((name) => name !== undefined).join(" or ");
+    return [
+      either(keys.moveEventUp, keys.moveEventDown) &&
+        `${either(keys.moveEventUp, keys.moveEventDown)} moves it earlier or later.`,
+      either(keys.moveEventToPreviousDay, keys.moveEventToNextDay) &&
+        `${either(keys.moveEventToPreviousDay, keys.moveEventToNextDay)} moves it to another day.`,
+      either(keys.shortenEvent, keys.extendEvent) &&
+        `${either(keys.shortenEvent, keys.extendEvent)} changes its end.`,
+    ]
+      .filter((sentence) => sentence !== "")
+      .join(" ");
+  },
   expandAllDay: "Show all all-day events",
   grid: "Schedule",
   moreEvents: (count) => `+${count} more`,
