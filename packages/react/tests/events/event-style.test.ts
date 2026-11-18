@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   eventLook,
-  eventSurface,
+  eventSurfaceProps,
   isPast,
 } from "../../src/events/event-style.js";
 
@@ -48,57 +48,53 @@ describe("isPast / eventLook", () => {
   });
 });
 
-describe("eventSurface", () => {
-  it("a confirmed event is a solid tint of its color over the theme background", () => {
+describe("eventSurfaceProps", () => {
+  it("marks the element as an event surface and passes the color as a variable", () => {
     expect(
-      eventSurface(
+      eventSurfaceProps(
         "#6366f1",
         {
           past: false,
           tentative: false,
         },
-        30,
+        "bar",
       ),
     ).toEqual({
-      accent: "#6366f1",
+      "data-uc-event": "",
+      "data-variant": "bar",
       style: {
-        backgroundColor:
-          "color-mix(in oklab, #6366f1 30%, var(--uc-background))",
+        "--uc-event-color": "#6366f1",
       },
     });
   });
 
-  it("a past event halves its tint and greys its accent", () => {
-    const { accent, style } = eventSurface(
-      "#6366f1",
-      {
-        past: true,
-        tentative: false,
-      },
-      30,
-    );
-    expect(accent).toBe(
-      "color-mix(in oklab, #6366f1 40%, var(--uc-muted-foreground))",
-    );
-    expect(style.backgroundColor).toBe(
-      `color-mix(in oklab, ${accent} 15%, var(--uc-background))`,
-    );
+  it("exposes past and tentative as data attributes", () => {
+    expect(
+      eventSurfaceProps(
+        "#6366f1",
+        {
+          past: true,
+          tentative: true,
+        },
+        "dot",
+      ),
+    ).toMatchObject({
+      "data-past": true,
+      "data-tentative": true,
+      "data-variant": "dot",
+    });
   });
 
-  it("a tentative event gets a lighter fill with diagonal stripes", () => {
-    const { style } = eventSurface(
-      "#6366f1",
-      {
-        past: false,
-        tentative: true,
-      },
-      30,
-    );
-    expect(style.backgroundColor).toBe(
-      "color-mix(in oklab, #6366f1 15%, var(--uc-background))",
-    );
-    expect(style.backgroundImage).toContain(
-      "repeating-linear-gradient(135deg, color-mix(in oklab, #6366f1 30%, transparent)",
-    );
+  it("leaves the color to the theme when there is none", () => {
+    expect(
+      eventSurfaceProps(
+        undefined,
+        {
+          past: false,
+          tentative: false,
+        },
+        "bar",
+      ).style,
+    ).toEqual({});
   });
 });

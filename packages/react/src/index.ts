@@ -4,10 +4,9 @@ export type {
   EventChipProps,
 } from "./events/event-chip.js";
 export { EventChip } from "./events/event-chip.js";
-export type { EventLook } from "./events/event-style.js";
-export {
-  DEFAULT_EVENT_COLOR,
-  eventLook,
-  eventSurface,
-  isPast,
+export type {
+  EventLook,
+  EventSurfaceProps,
+  EventVariant,
 } from "./events/event-style.js";
+export { eventLook, eventSurfaceProps, isPast } from "./events/event-style.js";

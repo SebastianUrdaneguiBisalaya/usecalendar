@@ -10,6 +10,8 @@
  *    theme, including its dark mode, with zero config.
  * 2. Exposes the tokens to Tailwind as `uc-*` colors and radius (`bg-uc-background`, `rounded-uc`, …).
  * 3. Registers the compiled components as a Tailwind source, so their utility classes get generated.
+ * 4. Draws event surfaces (tint, tentative stripes, muted past events) from `--uc-event-*` variables, in
+ *    `@layer components`, so any utility class overrides them without `!important`.
  *
  * Dark mode is applied with a `.dark` class or `data-theme="dark"` on any ancestor (next-themes and
  * shadcn conventions), or automatically from the OS preference unless a `.light` class or
@@ -18,6 +20,24 @@
  */
 
 @source "./";
+
+/*
+ * Event look. Override these globally or on one calendar, e.g. `.my-calendar { --uc-event-tint: 20%; }`.
+ * Declared in `@layer base` so any unlayered rule of yours wins.
+ */
+@layer base {
+  :root {
+    /* How much of the event color tints a bar's fill. */
+    --uc-event-tint: 30%;
+    /* The same, for events that have ended. */
+    --uc-event-past-tint: 15%;
+    /* How much of the event color a past event keeps in its accent; the rest is muted foreground. */
+    --uc-event-past-mix: 40%;
+    /* Diagonal stripes of tentative events. */
+    --uc-event-stripe-angle: 135deg;
+    --uc-event-stripe-width: 0.25rem;
+  }
+}
 
 :root {
   --uc-background: var(--background, oklch(1 0 0));
@@ -82,4 +102,61 @@
   --color-uc-border: var(--uc-border);
   --color-uc-ring: var(--uc-ring);
   --radius-uc: var(--uc-radius);
+}
+
+/*
+ * Event surfaces. `EventChip` (or any element with `data-uc-event`) sets `--uc-event-color` inline and
+ * exposes its state as `data-variant` ("bar" | "dot"), `data-past` and `data-tentative`.
+ */
+@layer components {
+  [data-uc-event] {
+    --uc-event-accent: var(--uc-event-color, var(--uc-muted-foreground));
+    --uc-event-fill: var(--uc-event-tint);
+  }
+
+  [data-uc-event][data-past] {
+    --uc-event-accent: color-mix(
+      in oklab,
+      var(--uc-event-color, var(--uc-muted-foreground)) var(--uc-event-past-mix),
+      var(--uc-muted-foreground)
+    );
+    --uc-event-fill: var(--uc-event-past-tint);
+  }
+
+  [data-uc-event][data-variant="bar"] {
+    background-color: color-mix(
+      in oklab,
+      var(--uc-event-accent) var(--uc-event-fill),
+      var(--uc-background)
+    );
+  }
+
+  [data-uc-event][data-variant="bar"][data-tentative] {
+    background-color: color-mix(
+      in oklab,
+      var(--uc-event-accent) calc(var(--uc-event-fill) / 2),
+      var(--uc-background)
+    );
+    background-image: repeating-linear-gradient(
+      var(--uc-event-stripe-angle),
+      color-mix(
+          in oklab,
+          var(--uc-event-accent) var(--uc-event-fill),
+          transparent
+        )
+        0 var(--uc-event-stripe-width),
+      transparent var(--uc-event-stripe-width)
+        calc(var(--uc-event-stripe-width) * 2)
+    );
+  }
+
+  [data-uc-event-dot] {
+    background-color: var(--uc-event-accent);
+    border-color: var(--uc-event-accent);
+  }
+
+  /* Too small to stripe: a tentative event's dot is a ring. */
+  [data-uc-event][data-tentative] [data-uc-event-dot] {
+    background-color: transparent;
+  }
 }

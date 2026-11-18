@@ -1,10 +1,6 @@
 import type { CalendarEvent } from "@usecalendar/core";
 import { cn } from "../utils/cn.js";
-import {
-  DEFAULT_EVENT_COLOR,
-  type EventLook,
-  eventSurface,
-} from "./event-style.js";
+import { type EventLook, eventSurfaceProps } from "./event-style.js";
 
 /** Class names for each part of an {@link EventChip}, merged after the defaults so they win. */
 export type EventChipClassNames = {
@@ -68,8 +64,11 @@ export type EventChipProps<TData = unknown> = {
  * colored dot, the start time and the title. Tentative events are striped (a ring instead of a dot), past
  * events are muted.
  *
- * The root element exposes its state as data attributes for styling: `data-variant` (`"bar"` | `"dot"`),
- * `data-past`, `data-tentative`, `data-continues-before`, `data-continues-after`.
+ * The fill, stripes and muting come from the stylesheet and its `--uc-event-*` variables (`--uc-event-tint`,
+ * `--uc-event-past-tint`, `--uc-event-past-mix`, `--uc-event-stripe-angle`, `--uc-event-stripe-width`), so
+ * they can be tuned in CSS or overridden with plain utility classes (e.g. `data-[tentative]:bg-none`).
+ * The root exposes its state as `data-variant` (`"bar"` | `"dot"`), `data-past`, `data-tentative`,
+ * `data-continues-before` and `data-continues-after`.
  *
  * @example
  * <EventChip event={event} look={eventLook(event, Date.now())} time="9:30 AM" classNames={{ title: "font-semibold" }} />
@@ -86,25 +85,27 @@ export function EventChip<TData = unknown>({
   span = 1,
   time,
 }: EventChipProps<TData>) {
-  const tint = color ?? event.color ?? DEFAULT_EVENT_COLOR;
   const isBar =
     bar ||
     event.allDay === true ||
     span > 1 ||
     continuesBefore ||
     continuesAfter;
-  const state = {
+  const surface = eventSurfaceProps(
+    color ?? event.color,
+    look,
+    isBar ? "bar" : "dot",
+  );
+  const continues = {
     "data-continues-after": continuesAfter || undefined,
     "data-continues-before": continuesBefore || undefined,
-    "data-past": look.past || undefined,
-    "data-tentative": look.tentative || undefined,
-    "data-variant": isBar ? "bar" : "dot",
   };
 
   if (isBar) {
     return (
       <div
-        {...state}
+        {...surface}
+        {...continues}
         className={cn(
           "flex h-full items-center truncate rounded-sm px-1.5 font-medium text-[0.7rem]",
           look.past ? "text-uc-muted-foreground" : "text-uc-foreground",
@@ -113,32 +114,27 @@ export function EventChip<TData = unknown>({
           classNames?.root,
           className,
         )}
-        style={eventSurface(tint, look, 30).style}
       >
         <span className={cn("truncate", classNames?.title)}>{event.title}</span>
       </div>
     );
   }
 
-  const { accent } = eventSurface(tint, look, 100);
   return (
     <div
-      {...state}
+      {...surface}
+      {...continues}
       className={cn(
-        "flex h-full items-center gap-1 truncate rounded-sm px-1 text-[0.7rem] text-uc-foreground",
-        look.past && "text-uc-muted-foreground",
+        "flex h-full items-center gap-1 truncate rounded-sm px-1 text-[0.7rem]",
+        look.past ? "text-uc-muted-foreground" : "text-uc-foreground",
         classNames?.root,
         className,
       )}
     >
-      {/* Too small to stripe: a tentative event's dot is a ring. */}
       <span
         aria-hidden
         className={cn("size-1.5 shrink-0 rounded-full border", classNames?.dot)}
-        style={{
-          backgroundColor: look.tentative ? "transparent" : accent,
-          borderColor: accent,
-        }}
+        data-uc-event-dot=""
       />
       {time !== undefined && (
         <span

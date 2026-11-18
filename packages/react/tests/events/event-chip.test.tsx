@@ -26,7 +26,8 @@ describe("EventChip", () => {
       />,
     );
     expect(html).toContain('data-variant="dot"');
-    expect(html).toContain("background-color:#6366f1");
+    expect(html).toContain("--uc-event-color:#6366f1");
+    expect(html).toContain("data-uc-event-dot");
     expect(html).toContain("10:00 AM");
     expect(html).toContain("Design review");
   });
@@ -78,7 +79,7 @@ describe("EventChip", () => {
     expect(html).toContain("data-continues-before");
   });
 
-  it("falls back to the theme color when the event has none", () => {
+  it("leaves the color to the theme when the event has none, and lets the color prop win", () => {
     expect(
       renderToStaticMarkup(
         <EventChip
@@ -86,10 +87,22 @@ describe("EventChip", () => {
           look={look}
         />,
       ),
-    ).toContain("var(--uc-muted-foreground)");
+    ).not.toContain("--uc-event-color");
+    expect(
+      renderToStaticMarkup(
+        <EventChip
+          color="red"
+          event={{
+            ...event,
+            color: "blue",
+          }}
+          look={look}
+        />,
+      ),
+    ).toContain("--uc-event-color:red");
   });
 
-  it("draws a tentative event's dot as a ring", () => {
+  it("leaves the tentative look (stripes, ring) to the stylesheet, without inline backgrounds", () => {
     const html = renderToStaticMarkup(
       <EventChip
         event={{
@@ -102,8 +115,8 @@ describe("EventChip", () => {
         }}
       />,
     );
-    expect(html).toContain("background-color:transparent;border-color:#6366f1");
     expect(html).toContain("data-tentative");
+    expect(html).not.toContain("background");
   });
 
   it("mutes past events", () => {
