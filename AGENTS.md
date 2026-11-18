@@ -176,9 +176,15 @@ Port behavior and visuals faithfully; replace every tempi-specific dependency wi
 - **Props over app state.** Every behavior is controllable: stateful props come in controlled (`view` + `onViewChange`) and uncontrolled (`defaultView`) forms.
 - **Generic event data.** The public event type is `CalendarEvent<TData>`; callbacks hand back the consumer's own `data` untouched.
 - **Styling contract.**
-  - Components ship Tailwind CSS v4 utility classes; consumers include the package in Tailwind's `@source`.
+  - Components are styled with Tailwind CSS v4 utility classes written as full literal strings (never built dynamically, or Tailwind can't detect them).
+  - `@usecalendar/react` ships two stylesheets built from `packages/react/src/styles/`:
+    - `theme.css` for Tailwind v4 apps (`@import "@usecalendar/react/theme.css"`): tokens + `@theme` mapping + `@source` of the compiled components.
+    - `styles.css` for apps without Tailwind: prebuilt utilities + tokens, **without** Tailwind's preflight so it never resets the host page.
   - Every component accepts `className` (root) and `classNames` (per-part slots), merged with `cn()` (`clsx` + `tailwind-merge`) so consumer classes always win.
-  - Colors, radius and borders come from CSS variables (`--uc-*`) that fall back to shadcn tokens, so the calendar matches a shadcn app with zero config. Fonts are inherited from the host app.
+  - Colors and radius come only from the `--uc-*` tokens, exposed as `uc-*` Tailwind colors (`bg-uc-background`, `text-uc-muted-foreground`, `rounded-uc`, …). Never hard-code palette colors (`bg-white`, `text-zinc-500`) in components.
+  - Each token falls back to the matching shadcn token (`--background`, `--primary`, …), so the calendar matches a shadcn app, including its dark mode, with zero config.
+  - **Dark mode lives in the tokens, not in `dark:` variants.** `theme.css` switches the tokens on `.dark` / `[data-theme="dark"]`, or on the OS preference unless `.light` / `[data-theme="light"]` opts out. Components must not use `dark:` utilities and the library must not define `@custom-variant dark`, which would override the host's.
+  - Fonts are inherited from the host app.
 - **Accessibility is part of the port.** Keep tempi's ARIA grid semantics, roving focus, keyboard shortcuts and screen-reader labels.
 - **Time.** Dates use the global `Temporal` API (`Temporal.PlainDate`, `Temporal.ZonedDateTime`); event times are ISO 8601 instants. No polyfill is bundled; the README documents loading `temporal-polyfill/global` on runtimes without native `Temporal`.
 
