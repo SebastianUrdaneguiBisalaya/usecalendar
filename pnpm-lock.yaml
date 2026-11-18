@@ -164,6 +164,9 @@ importers:
       tailwindcss:
         specifier: 4.3.5
         version: 4.3.5
+      temporal-polyfill:
+        specifier: 1.0.8
+        version: 1.0.8
       tsup:
         specifier: 8.5.1
         version: 8.5.1(jiti@2.7.0)(postcss@8.5.26)(tsx@4.23.13)(typescript@6.0.3)
