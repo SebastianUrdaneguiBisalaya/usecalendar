@@ -1,5 +1,7 @@
-/** Every action the calendar can bind to a keyboard shortcut. */
-export const CALENDAR_HOTKEY_ACTIONS = [
+/**
+ * Actions bound to global shortcuts: they act on the whole calendar, wherever focus is (within the scope).
+ */
+export const GLOBAL_HOTKEY_ACTIONS = [
   "goToToday",
   "next",
   "previous",
@@ -12,11 +14,44 @@ export const CALENDAR_HOTKEY_ACTIONS = [
   "close",
 ] as const;
 
+/**
+ * Actions bound to grid shortcuts: they act on the focused day, slot or event, so they only fire while focus is
+ * inside a grid. Moving focus (arrows, Home/End, PageUp/PageDown) is not here: it follows the WAI-ARIA grid
+ * pattern screen-reader users rely on, so it can't be remapped.
+ */
+export const GRID_HOTKEY_ACTIONS = [
+  "openFocused",
+  "moveEventUp",
+  "moveEventDown",
+  "moveEventToPreviousDay",
+  "moveEventToNextDay",
+  "shortenEvent",
+  "extendEvent",
+  "cancelDrag",
+] as const;
+
+/** Every action the calendar can bind to a keyboard shortcut. */
+export const CALENDAR_HOTKEY_ACTIONS = [
+  ...GLOBAL_HOTKEY_ACTIONS,
+  ...GRID_HOTKEY_ACTIONS,
+] as const;
+
+/** An action bound to a global shortcut; see {@link GLOBAL_HOTKEY_ACTIONS}. */
+export type GlobalHotkeyAction = (typeof GLOBAL_HOTKEY_ACTIONS)[number];
+
+/** An action bound to a grid shortcut; see {@link GRID_HOTKEY_ACTIONS}. */
+export type GridHotkeyAction = (typeof GRID_HOTKEY_ACTIONS)[number];
+
 /** An action the calendar can bind to a keyboard shortcut. */
 export type CalendarHotkeyAction = (typeof CALENDAR_HOTKEY_ACTIONS)[number];
 
 /** Groups for listing shortcuts (e.g. in a shortcuts dialog or command menu). */
-export type CalendarHotkeyGroup = "events" | "general" | "navigation" | "views";
+export type CalendarHotkeyGroup =
+  | "events"
+  | "general"
+  | "grid"
+  | "navigation"
+  | "views";
 
 /** One action's shortcut: the keys that trigger it and the group it's listed under. */
 export type CalendarHotkeyDefinition = {
@@ -30,6 +65,8 @@ export type CalendarHotkeyDefinition = {
  * (`{ [action]: { keys, group } }`), so apps can register it in their own hotkey registry, shortcut lists or
  * command menu.
  *
+ * Global:
+ *
  * | Action | Keys |
  * |---|---|
  * | `goToToday` | `t` |
@@ -39,10 +76,26 @@ export type CalendarHotkeyDefinition = {
  * | `newEvent` | `c` |
  * | `deleteEvent` | `Backspace`, `Delete` |
  * | `close` | `Escape` |
+ *
+ * Grid (focused day, slot or event):
+ *
+ * | Action | Keys |
+ * |---|---|
+ * | `openFocused` | `Enter`, `Space` |
+ * | `moveEventUp` / `moveEventDown` | `Alt+↑` / `Alt+↓` |
+ * | `moveEventToPreviousDay` / `moveEventToNextDay` | `Alt+←` / `Alt+→` |
+ * | `shortenEvent` / `extendEvent` | `Alt+Shift+↑` / `Alt+Shift+↓` |
+ * | `cancelDrag` | `Escape` |
  */
 export const CALENDAR_KEYMAP: Readonly<
   Record<CalendarHotkeyAction, CalendarHotkeyDefinition>
 > = {
+  cancelDrag: {
+    group: "grid",
+    keys: [
+      "escape",
+    ],
+  },
   close: {
     group: "general",
     keys: [
@@ -60,6 +113,12 @@ export const CALENDAR_KEYMAP: Readonly<
     keys: [
       "backspace",
       "delete",
+    ],
+  },
+  extendEvent: {
+    group: "grid",
+    keys: [
+      "alt+shift+arrowdown",
     ],
   },
   goToDate: {
@@ -80,6 +139,30 @@ export const CALENDAR_KEYMAP: Readonly<
       "m",
     ],
   },
+  moveEventDown: {
+    group: "grid",
+    keys: [
+      "alt+arrowdown",
+    ],
+  },
+  moveEventToNextDay: {
+    group: "grid",
+    keys: [
+      "alt+arrowright",
+    ],
+  },
+  moveEventToPreviousDay: {
+    group: "grid",
+    keys: [
+      "alt+arrowleft",
+    ],
+  },
+  moveEventUp: {
+    group: "grid",
+    keys: [
+      "alt+arrowup",
+    ],
+  },
   newEvent: {
     group: "events",
     keys: [
@@ -93,11 +176,24 @@ export const CALENDAR_KEYMAP: Readonly<
       "arrowright",
     ],
   },
+  openFocused: {
+    group: "grid",
+    keys: [
+      "enter",
+      "space",
+    ],
+  },
   previous: {
     group: "navigation",
     keys: [
       "k",
       "arrowleft",
+    ],
+  },
+  shortenEvent: {
+    group: "grid",
+    keys: [
+      "alt+shift+arrowup",
     ],
   },
   weekView: {
@@ -113,16 +209,21 @@ export const CALENDAR_KEYMAP: Readonly<
  * (keys replace the defaults, `null` turns that action off).
  *
  * @example
- * { next: ["l", "arrowright"], deleteEvent: null }
+ * { next: ["l", "arrowright"], deleteEvent: null, moveEventUp: "shift+arrowup" }
  */
 export type CalendarHotkeys =
   | boolean
   | Partial<Record<CalendarHotkeyAction, string | readonly string[] | null>>;
 
+/** The keys bound to each action after applying a {@link CalendarHotkeys} configuration. */
+export type ResolvedKeymap = Readonly<
+  Record<CalendarHotkeyAction, readonly string[]>
+>;
+
 /** The keys bound to each action after applying `hotkeys`; actions turned off have no keys. */
 export const resolveKeymap = (
   hotkeys: CalendarHotkeys | undefined,
-): Record<CalendarHotkeyAction, readonly string[]> =>
+): ResolvedKeymap =>
   Object.fromEntries(
     CALENDAR_HOTKEY_ACTIONS.map((action) => {
       if (hotkeys === false)
@@ -151,7 +252,7 @@ export const resolveKeymap = (
           : override,
       ];
     }),
-  ) as Record<CalendarHotkeyAction, readonly string[]>;
+  ) as ResolvedKeymap;
 
 /** A parsed key combination. */
 export type Hotkey = {
@@ -204,7 +305,7 @@ const isLetterOrDigit = (key: string) => /^[a-z0-9]$/.test(key);
  * True when `event` is the key combination `combo` (see {@link parseHotkey}).
  *
  * Ctrl, Alt and ⌘ must match exactly, so `t` doesn't fire on ⌘T. Shift must match for letters, digits and named
- * keys; for symbols it's ignored, since typing `?` or `+` needs Shift on most layouts.
+ * keys; for symbols it's ignored, since typing `?` or `+` needs Shift on most layouts. Caps Lock doesn't matter.
  *
  * @param isMac - Whether `mod` means ⌘ (macOS) or Ctrl.
  */
@@ -224,16 +325,63 @@ export const matchesHotkey = (
     event.altKey !== hotkey.alt
   )
     return false;
-  const isSymbol = key.length === 1 && !isLetterOrDigit(key);
+  const isSymbol = key.length === 1 && key !== " " && !isLetterOrDigit(key);
   return isSymbol || event.shiftKey === hotkey.shift;
 };
 
-/** The first action whose keys match `event` in `keymap`, or `null`. */
-export const hotkeyActionFor = (
+/**
+ * The first of `actions` whose keys match `event` in `keymap`, or `null`.
+ *
+ * @param actions - The actions to consider, e.g. {@link GLOBAL_HOTKEY_ACTIONS} or {@link GRID_HOTKEY_ACTIONS}.
+ */
+export const hotkeyActionFor = <Action extends CalendarHotkeyAction>(
   event: HotkeyEvent,
-  keymap: Readonly<Record<CalendarHotkeyAction, readonly string[]>>,
+  keymap: ResolvedKeymap,
   isMac: boolean,
-): CalendarHotkeyAction | null =>
-  CALENDAR_HOTKEY_ACTIONS.find((action) =>
+  actions: readonly Action[],
+): Action | null =>
+  actions.find((action) =>
     keymap[action].some((combo) => matchesHotkey(event, combo, isMac)),
   ) ?? null;
+
+const KEY_NAMES: Readonly<Record<string, string>> = {
+  " ": "Space",
+  arrowdown: "Down Arrow",
+  arrowleft: "Left Arrow",
+  arrowright: "Right Arrow",
+  arrowup: "Up Arrow",
+  backspace: "Backspace",
+  delete: "Delete",
+  end: "End",
+  enter: "Enter",
+  escape: "Escape",
+  home: "Home",
+  pagedown: "Page Down",
+  pageup: "Page Up",
+  tab: "Tab",
+};
+
+/**
+ * A key combination spelled out in English words, for screen-reader hints and shortcut lists, using the
+ * platform's modifier names.
+ *
+ * @example
+ * describeHotkey("alt+shift+arrowup", true); // "Option+Shift+Up Arrow"
+ * describeHotkey("mod+z", false); // "Ctrl+Z"
+ */
+export const describeHotkey = (combo: string, isMac: boolean): string => {
+  const { alt, ctrl, key, meta, mod, shift } = parseHotkey(combo);
+  const names = [
+    (ctrl || (mod && !isMac)) && "Ctrl",
+    (meta || (mod && isMac)) && (isMac ? "Command" : "Meta"),
+    alt && (isMac ? "Option" : "Alt"),
+    shift && "Shift",
+    KEY_NAMES[key] ??
+      (key === "+"
+        ? "Plus"
+        : key.length === 1
+          ? key.toUpperCase()
+          : key[0]?.toUpperCase() + key.slice(1)),
+  ];
+  return names.filter((name) => typeof name === "string").join("+");
+};

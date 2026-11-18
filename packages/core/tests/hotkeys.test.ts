@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   CALENDAR_KEYMAP,
+  describeHotkey,
+  GLOBAL_HOTKEY_ACTIONS,
+  GRID_HOTKEY_ACTIONS,
   hotkeyActionFor,
   matchesHotkey,
   parseHotkey,
@@ -34,6 +37,9 @@ describe("CALENDAR_KEYMAP", () => {
         ]),
       ),
     ).toEqual({
+      cancelDrag: [
+        "escape",
+      ],
       close: [
         "escape",
       ],
@@ -44,6 +50,9 @@ describe("CALENDAR_KEYMAP", () => {
         "backspace",
         "delete",
       ],
+      extendEvent: [
+        "alt+shift+arrowdown",
+      ],
       goToDate: [
         ".",
       ],
@@ -53,6 +62,18 @@ describe("CALENDAR_KEYMAP", () => {
       monthView: [
         "m",
       ],
+      moveEventDown: [
+        "alt+arrowdown",
+      ],
+      moveEventToNextDay: [
+        "alt+arrowright",
+      ],
+      moveEventToPreviousDay: [
+        "alt+arrowleft",
+      ],
+      moveEventUp: [
+        "alt+arrowup",
+      ],
       newEvent: [
         "c",
       ],
@@ -60,14 +81,35 @@ describe("CALENDAR_KEYMAP", () => {
         "j",
         "arrowright",
       ],
+      openFocused: [
+        "enter",
+        "space",
+      ],
       previous: [
         "k",
         "arrowleft",
+      ],
+      shortenEvent: [
+        "alt+shift+arrowup",
       ],
       weekView: [
         "w",
       ],
     });
+  });
+
+  it("splits actions into global and grid ones", () => {
+    expect(
+      [
+        ...GLOBAL_HOTKEY_ACTIONS,
+        ...GRID_HOTKEY_ACTIONS,
+      ].sort(),
+    ).toEqual(Object.keys(CALENDAR_KEYMAP).sort());
+    expect(
+      GRID_HOTKEY_ACTIONS.every(
+        (action) => CALENDAR_KEYMAP[action].group === "grid",
+      ),
+    ).toBe(true);
   });
 });
 
@@ -77,8 +119,8 @@ describe("resolveKeymap", () => {
       "j",
       "arrowright",
     ]);
-    expect(resolveKeymap(true).goToToday).toEqual([
-      "t",
+    expect(resolveKeymap(true).moveEventUp).toEqual([
+      "alt+arrowup",
     ]);
   });
 
@@ -92,6 +134,7 @@ describe("resolveKeymap", () => {
     const keymap = resolveKeymap({
       deleteEvent: null,
       goToToday: "h",
+      moveEventUp: "shift+arrowup",
       next: [
         "l",
       ],
@@ -101,6 +144,9 @@ describe("resolveKeymap", () => {
     ]);
     expect(keymap.goToToday).toEqual([
       "h",
+    ]);
+    expect(keymap.moveEventUp).toEqual([
+      "shift+arrowup",
     ]);
     expect(keymap.deleteEvent).toEqual([]);
     expect(keymap.previous).toEqual([
@@ -136,8 +182,6 @@ describe("parseHotkey", () => {
 describe("matchesHotkey", () => {
   it("matches plain keys only without Ctrl, Alt or ⌘", () => {
     expect(matchesHotkey(press("t"), "t", false)).toBe(true);
-    // Caps Lock doesn't get in the way.
-    expect(matchesHotkey(press("T"), "t", false)).toBe(true);
     expect(
       matchesHotkey(
         press("t", {
@@ -157,9 +201,22 @@ describe("matchesHotkey", () => {
       ),
     ).toBe(false);
     expect(matchesHotkey(press("ArrowRight"), "arrowright", false)).toBe(true);
+    expect(
+      matchesHotkey(
+        press("ArrowRight", {
+          altKey: true,
+        }),
+        "arrowright",
+        false,
+      ),
+    ).toBe(false);
   });
 
-  it("requires Shift to match for letters and named keys", () => {
+  it("ignores Caps Lock", () => {
+    expect(matchesHotkey(press("T"), "t", false)).toBe(true);
+  });
+
+  it("requires Shift to match for letters, named keys and Space", () => {
     expect(
       matchesHotkey(
         press("T", {
@@ -180,10 +237,30 @@ describe("matchesHotkey", () => {
     ).toBe(true);
     expect(
       matchesHotkey(
-        press("ArrowRight", {
+        press("ArrowUp", {
+          altKey: true,
           shiftKey: true,
         }),
-        "arrowright",
+        "alt+arrowup",
+        false,
+      ),
+    ).toBe(false);
+    expect(
+      matchesHotkey(
+        press("ArrowUp", {
+          altKey: true,
+          shiftKey: true,
+        }),
+        "alt+shift+arrowup",
+        false,
+      ),
+    ).toBe(true);
+    expect(
+      matchesHotkey(
+        press(" ", {
+          shiftKey: true,
+        }),
+        "space",
         false,
       ),
     ).toBe(false);
@@ -242,11 +319,47 @@ describe("matchesHotkey", () => {
 });
 
 describe("hotkeyActionFor", () => {
-  it("finds the action bound to a key press", () => {
-    const keymap = resolveKeymap(true);
-    expect(hotkeyActionFor(press("j"), keymap, false)).toBe("next");
-    expect(hotkeyActionFor(press("Delete"), keymap, false)).toBe("deleteEvent");
-    expect(hotkeyActionFor(press("x"), keymap, false)).toBeNull();
+  const keymap = resolveKeymap(true);
+
+  it("finds the global action bound to a key press", () => {
+    expect(
+      hotkeyActionFor(press("j"), keymap, false, GLOBAL_HOTKEY_ACTIONS),
+    ).toBe("next");
+    expect(
+      hotkeyActionFor(press("Delete"), keymap, false, GLOBAL_HOTKEY_ACTIONS),
+    ).toBe("deleteEvent");
+    expect(
+      hotkeyActionFor(press("x"), keymap, false, GLOBAL_HOTKEY_ACTIONS),
+    ).toBeNull();
+  });
+
+  it("finds grid actions only among grid actions", () => {
+    const altUp = press("ArrowUp", {
+      altKey: true,
+    });
+    expect(hotkeyActionFor(altUp, keymap, false, GRID_HOTKEY_ACTIONS)).toBe(
+      "moveEventUp",
+    );
+    expect(
+      hotkeyActionFor(altUp, keymap, false, GLOBAL_HOTKEY_ACTIONS),
+    ).toBeNull();
+    expect(
+      hotkeyActionFor(
+        press("ArrowDown", {
+          altKey: true,
+          shiftKey: true,
+        }),
+        keymap,
+        false,
+        GRID_HOTKEY_ACTIONS,
+      ),
+    ).toBe("extendEvent");
+    expect(
+      hotkeyActionFor(press(" "), keymap, false, GRID_HOTKEY_ACTIONS),
+    ).toBe("openFocused");
+    expect(
+      hotkeyActionFor(press("Escape"), keymap, false, GRID_HOTKEY_ACTIONS),
+    ).toBe("cancelDrag");
   });
 
   it("finds nothing for actions turned off", () => {
@@ -257,7 +370,23 @@ describe("hotkeyActionFor", () => {
           next: null,
         }),
         false,
+        GLOBAL_HOTKEY_ACTIONS,
       ),
     ).toBeNull();
+  });
+});
+
+describe("describeHotkey", () => {
+  it("spells keys out with the platform's modifier names", () => {
+    expect(describeHotkey("alt+shift+arrowup", true)).toBe(
+      "Option+Shift+Up Arrow",
+    );
+    expect(describeHotkey("alt+arrowleft", false)).toBe("Alt+Left Arrow");
+    expect(describeHotkey("mod+z", true)).toBe("Command+Z");
+    expect(describeHotkey("mod+z", false)).toBe("Ctrl+Z");
+    expect(describeHotkey("space", false)).toBe("Space");
+    expect(describeHotkey(".", false)).toBe(".");
+    expect(describeHotkey("ctrl+plus", false)).toBe("Ctrl+Plus");
+    expect(describeHotkey("f2", false)).toBe("F2");
   });
 });

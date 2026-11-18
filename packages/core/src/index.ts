@@ -21,12 +21,18 @@ export type {
   CalendarHotkeyDefinition,
   CalendarHotkeyGroup,
   CalendarHotkeys,
+  GlobalHotkeyAction,
+  GridHotkeyAction,
   Hotkey,
   HotkeyEvent,
+  ResolvedKeymap,
 } from "./hotkeys.js";
 export {
   CALENDAR_HOTKEY_ACTIONS,
   CALENDAR_KEYMAP,
+  describeHotkey,
+  GLOBAL_HOTKEY_ACTIONS,
+  GRID_HOTKEY_ACTIONS,
   hotkeyActionFor,
   matchesHotkey,
   parseHotkey,
