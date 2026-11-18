@@ -6,6 +6,10 @@ export default defineConfig({
   clean: true,
 
   dts: {
+    // tsup injects `baseUrl` into the declaration build, which TypeScript 6 flags as deprecated.
+    compilerOptions: {
+      ignoreDeprecations: "6.0",
+    },
     resolve: true,
   },
   entry: {
@@ -27,7 +31,7 @@ export default defineConfig({
     };
   },
 
-  platform: "node",
+  platform: "neutral",
 
   skipNodeModulesBundle: true,
 

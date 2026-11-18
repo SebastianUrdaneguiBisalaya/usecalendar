@@ -1,0 +1,34 @@
+{
+  // Shared compiler options for every package in the workspace.
+  // Each package extends this file and adds only what differs (e.g. `lib`, `jsx`) plus its own `include`/`exclude`.
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "declaration": true,
+    "declarationMap": true,
+    "exactOptionalPropertyTypes": true,
+    "isolatedModules": true,
+    // Environment: browser + SSR library, ES2023 plus the Temporal API. No Node or DOM types by default;
+    // packages that render UI add "DOM" to `lib` in their own tsconfig.
+    "lib": [
+      "ES2023",
+      "ESNext.Temporal"
+    ],
+    "module": "nodenext",
+    "moduleDetection": "force",
+    "moduleResolution": "nodenext",
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
+    "noUncheckedSideEffectImports": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "strict": true,
+    "target": "esnext",
+    "types": [],
+    "verbatimModuleSyntax": true
+  }
+}

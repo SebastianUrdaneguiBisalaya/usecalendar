@@ -1,19 +1,32 @@
 {
-  "name": "node-sdk-template",
+  "name": "@usecalendar/core",
   "version": "0.1.0",
-  "description": "Template for a Node.js SDK in TypeScript wrapping a third-party HTTP API, with dual ESM/CJS support.",
+  "description": "Framework-agnostic core of usecalendar: calendar types, visible ranges, month/week/day layout and drag/keyboard math for Google Calendar-style calendar UIs.",
   "keywords": [
-    "sdk",
+    "calendar",
+    "scheduler",
+    "month-view",
+    "week-view",
+    "day-view",
+    "event-calendar",
+    "google-calendar",
+    "temporal",
     "typescript",
-    "template",
-    "tsup",
-    "esm",
-    "cjs"
+    "usecalendar"
   ],
   "license": "ISC",
   "author": {
     "name": "Sebastian Marat Urdanegui Bisalaya",
     "url": "https://sebastianurdanegui.com"
+  },
+  "homepage": "https://github.com/SebastianUrdaneguiBisalaya/usecalendar#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SebastianUrdaneguiBisalaya/usecalendar.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/SebastianUrdaneguiBisalaya/usecalendar/issues"
   },
   "private": true,
   "type": "module",
@@ -49,13 +62,10 @@
       "version": "12.3.4"
     }
   },
-  "engines": {
-    "node": ">=18.0.0"
-  },
   "devDependencies": {
     "tsup": "8.5.1",
     "tsx": "4.23.13",
-    "typescript": "5.7.3",
+    "typescript": "6.0.3",
     "vitest": "4.1.11"
   }
 }
