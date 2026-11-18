@@ -1,0 +1,85 @@
+/*
+ * usecalendar theme for Tailwind CSS v4 apps.
+ *
+ *   @import "tailwindcss";
+ *   @import "@usecalendar/react/theme.css";
+ *
+ * It does three things:
+ * 1. Defines the `--uc-*` design tokens, light and dark. Each one falls back to the matching shadcn/ui
+ *    token when the host defines it (`--background`, `--primary`, …), so the calendar follows a shadcn
+ *    theme, including its dark mode, with zero config.
+ * 2. Exposes the tokens to Tailwind as `uc-*` colors and radius (`bg-uc-background`, `rounded-uc`, …).
+ * 3. Registers the compiled components as a Tailwind source, so their utility classes get generated.
+ *
+ * Dark mode is applied with a `.dark` class or `data-theme="dark"` on any ancestor (next-themes and
+ * shadcn conventions), or automatically from the OS preference unless a `.light` class or
+ * `data-theme="light"` opts out. Override any token in your own CSS, globally or on one calendar's
+ * `className`, e.g. `.my-calendar { --uc-primary: #7c3aed; }`.
+ */
+
+@source "./";
+
+:root {
+  --uc-background: var(--background, oklch(1 0 0));
+  --uc-foreground: var(--foreground, oklch(0.145 0 0));
+  --uc-muted: var(--muted, oklch(0.97 0 0));
+  --uc-muted-foreground: var(--muted-foreground, oklch(0.556 0 0));
+  --uc-accent: var(--accent, oklch(0.97 0 0));
+  --uc-accent-foreground: var(--accent-foreground, oklch(0.205 0 0));
+  --uc-primary: var(--primary, oklch(0.205 0 0));
+  --uc-primary-foreground: var(--primary-foreground, oklch(0.985 0 0));
+  --uc-popover: var(--popover, oklch(1 0 0));
+  --uc-popover-foreground: var(--popover-foreground, oklch(0.145 0 0));
+  --uc-border: var(--border, oklch(0.922 0 0));
+  --uc-ring: var(--ring, oklch(0.708 0 0));
+  --uc-radius: var(--radius, 0.625rem);
+}
+
+.dark,
+[data-theme="dark"] {
+  --uc-background: var(--background, oklch(0.145 0 0));
+  --uc-foreground: var(--foreground, oklch(0.985 0 0));
+  --uc-muted: var(--muted, oklch(0.269 0 0));
+  --uc-muted-foreground: var(--muted-foreground, oklch(0.708 0 0));
+  --uc-accent: var(--accent, oklch(0.269 0 0));
+  --uc-accent-foreground: var(--accent-foreground, oklch(0.985 0 0));
+  --uc-primary: var(--primary, oklch(0.922 0 0));
+  --uc-primary-foreground: var(--primary-foreground, oklch(0.205 0 0));
+  --uc-popover: var(--popover, oklch(0.205 0 0));
+  --uc-popover-foreground: var(--popover-foreground, oklch(0.985 0 0));
+  --uc-border: var(--border, oklch(1 0 0 / 10%));
+  --uc-ring: var(--ring, oklch(0.556 0 0));
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light):not([data-theme="light"]) {
+    --uc-background: var(--background, oklch(0.145 0 0));
+    --uc-foreground: var(--foreground, oklch(0.985 0 0));
+    --uc-muted: var(--muted, oklch(0.269 0 0));
+    --uc-muted-foreground: var(--muted-foreground, oklch(0.708 0 0));
+    --uc-accent: var(--accent, oklch(0.269 0 0));
+    --uc-accent-foreground: var(--accent-foreground, oklch(0.985 0 0));
+    --uc-primary: var(--primary, oklch(0.922 0 0));
+    --uc-primary-foreground: var(--primary-foreground, oklch(0.205 0 0));
+    --uc-popover: var(--popover, oklch(0.205 0 0));
+    --uc-popover-foreground: var(--popover-foreground, oklch(0.985 0 0));
+    --uc-border: var(--border, oklch(1 0 0 / 10%));
+    --uc-ring: var(--ring, oklch(0.556 0 0));
+  }
+}
+
+@theme inline {
+  --color-uc-background: var(--uc-background);
+  --color-uc-foreground: var(--uc-foreground);
+  --color-uc-muted: var(--uc-muted);
+  --color-uc-muted-foreground: var(--uc-muted-foreground);
+  --color-uc-accent: var(--uc-accent);
+  --color-uc-accent-foreground: var(--uc-accent-foreground);
+  --color-uc-primary: var(--uc-primary);
+  --color-uc-primary-foreground: var(--uc-primary-foreground);
+  --color-uc-popover: var(--uc-popover);
+  --color-uc-popover-foreground: var(--uc-popover-foreground);
+  --color-uc-border: var(--uc-border);
+  --color-uc-ring: var(--uc-ring);
+  --radius-uc: var(--uc-radius);
+}
