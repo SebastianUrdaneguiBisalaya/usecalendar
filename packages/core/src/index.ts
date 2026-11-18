@@ -16,6 +16,28 @@ export type { CalendarEvent, EventStatus } from "./event.js";
 export { EVENT_STATUSES } from "./event.js";
 export type { DayEvents, GridFocus } from "./grid-focus.js";
 export { focusKey, nextFocus, SLOT_MINUTES } from "./grid-focus.js";
+export type {
+  CalendarHotkeyAction,
+  CalendarHotkeyDefinition,
+  CalendarHotkeyGroup,
+  CalendarHotkeys,
+  GlobalHotkeyAction,
+  GridHotkeyAction,
+  Hotkey,
+  HotkeyEvent,
+  ResolvedKeymap,
+} from "./hotkeys.js";
+export {
+  CALENDAR_HOTKEY_ACTIONS,
+  CALENDAR_KEYMAP,
+  describeHotkey,
+  GLOBAL_HOTKEY_ACTIONS,
+  GRID_HOTKEY_ACTIONS,
+  hotkeyActionFor,
+  matchesHotkey,
+  parseHotkey,
+  resolveKeymap,
+} from "./hotkeys.js";
 export type { DatedItem, WeekSegment } from "./month-layout.js";
 export {
   belongsInAllDayLane,
