@@ -1,51 +1,11 @@
 {
-  // Visit https://aka.ms/tsconfig to read more about this file
-  "compilerOptions": {
-    "declaration": true,
-    "declarationMap": true,
-    "exactOptionalPropertyTypes": true,
-    "isolatedModules": true,
-    // Browser + SSR library: ES2023 plus the Temporal API, no Node or DOM types in core.
-    "lib": [
-      "ES2023",
-      "ESNext.Temporal"
-    ],
-    // File Layout
-    // "rootDir": "./src",
-    // "outDir": "./dist",
-
-    // Environment Settings
-    // See also https://aka.ms/tsconfig/module
-    "module": "nodenext",
-    "moduleDetection": "force",
-    "moduleResolution": "nodenext",
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitOverride": true,
-
-    // Style Options
-    "noImplicitReturns": true,
-    "noPropertyAccessFromIndexSignature": true,
-
-    // Stricter Typechecking Options
-    "noUncheckedIndexedAccess": true,
-    "noUncheckedSideEffectImports": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "skipLibCheck": true,
-
-    // Other Outputs
-    "sourceMap": true,
-
-    // Recommended Options
-    "strict": true,
-    "target": "esnext",
-    "types": [],
-    "verbatimModuleSyntax": true
-  },
+  // Framework-agnostic core: inherits the base `lib` (ES2023 + Temporal) with no DOM types on purpose.
+  "$schema": "https://json.schemastore.org/tsconfig",
   "exclude": [
     "node_modules",
     "dist"
   ],
+  "extends": "../../tsconfig.base.json",
   "include": [
     "src",
     "tests"
