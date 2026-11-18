@@ -194,10 +194,14 @@ Port behavior and visuals faithfully; replace every tempi-specific dependency wi
   - Fonts are inherited from the host app.
 - **Accessibility is part of the port.** Keep tempi's ARIA grid semantics, roving focus, keyboard shortcuts and screen-reader labels.
 - **Keyboard shortcuts keep tempi's keys.**
-  - **Two layers:**
-    - Grid-local keys (arrows/Home/End/PageUp/PageDown focus, Enter, Alt+arrows move, Alt+Shift+↑/↓ resize, Esc cancels a drag) are built into the grid. A grid that handles a key calls `preventDefault()`, so the global shortcuts skip it.
-    - Global shortcuts come from `CALENDAR_KEYMAP` (core) and are bound by `useCalendarHotkeys` (react), with no dependency on any hotkey library.
-  - **Changing a default key is a breaking change.** Consumers configure keys through `hotkeys` (`true` / `false` / per-action overrides) and `hotkeysScope` (`"document"` by default, or `"calendar"`).
+  - **Focus keys are fixed.** Arrows, Home/End, Ctrl+Home/End and PageUp/PageDown move focus inside a grid and are not configurable: they follow the WAI-ARIA grid pattern screen-reader users rely on.
+  - **Everything else is in `CALENDAR_KEYMAP` (core), in two groups:**
+    - **Global actions** (`GLOBAL_HOTKEY_ACTIONS`: today, next, previous, views, new, delete, go-to-date, close) are bound by `useCalendarHotkeys`. With the `"document"` scope, every calendar on the page shares one document listener, and only the calendar the user last focused or clicked (else the last mounted) handles a key.
+    - **Grid actions** (`GRID_HOTKEY_ACTIONS`: open focused, Alt+arrows move, Alt+Shift+↑/↓ resize, Esc cancels a drag) are handled by the grids. They read the configuration from `useCalendarKeymap()` and match keys with `gridActionFor`, never hard-coded key checks.
+  - **Handled keys are consumed.** A grid that handles a key calls `preventDefault()`, so the global shortcuts skip it.
+  - **No hotkey library.** Nothing depends on one. Consumers configure every action through `hotkeys` (`true` / `false` / per-action overrides) and `hotkeysScope` (`"document"` by default, or `"calendar"`).
+  - **The hint follows the real keys.** Screen-reader hints describing shortcuts (`useEventKeyboardHint`) are built from the bound keys with `describeHotkey`, never from fixed text.
+  - **Changing a default key is a breaking change** (major version).
   - **App actions are callbacks.** New, delete, go-to-date and close never act on data themselves; they fire only when the app passes a handler.
 - **Time.** Dates use the global `Temporal` API (`Temporal.PlainDate`, `Temporal.ZonedDateTime`); event times are ISO 8601 instants with an offset, always compared by time (`Date.parse` / `Temporal.Instant.compare`), never as text. No polyfill is bundled or imported from `src/`; the README documents loading `temporal-polyfill/global` on runtimes without native `Temporal` (Node 24 included). Tests load it through each package's vitest `setupFiles` (`tests/setup.ts`), with `temporal-polyfill` as a devDependency only.
 
