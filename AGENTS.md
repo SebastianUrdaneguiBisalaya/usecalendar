@@ -93,6 +93,7 @@ This is achieved by:
 - `.editorconfig` sets the baseline (indentation, charset, line endings, final newline) for files Biome doesn't format — Markdown, YAML/workflow files, etc.
 - Tests with `vitest`, mirroring the structure of `src/` inside `tests/`.
 - **No visual or browser tests.** Don't add Playwright, Puppeteer, or screenshot-based tests, and never install them. Unit tests cover the pure logic in `@usecalendar/core`; the UI is verified manually by the maintainer.
+- **What React tests may do.** Render components to an HTML string with `react-dom/server` to check markup, classes and attributes. For hook behavior (state, effects, timers), opt a test file into the emulated DOM with `// @vitest-environment jsdom` and use the `renderHook` helper in `packages/react/tests/render-hook.tsx`. Nothing is painted and no browser runs. React's vitest config aliases `@usecalendar/core` to core's source, so tests never run against a stale core build.
 - Don't merge to `main` with `typecheck`, `lint`, or `test` failing.
 - The `prepublishOnly` script must run `build` (and optionally `test`) to avoid publishing an outdated or broken package.
 - **Git hooks via [husky](https://typicode.github.io/husky/)** run checks locally before code reaches CI (`prepare: "husky"` installs them on `pnpm install`). Hooks are a local safety net, not a substitute for CI.

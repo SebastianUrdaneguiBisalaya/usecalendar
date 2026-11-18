@@ -1,4 +1,18 @@
 // Public surface of @usecalendar/react. Components and hooks are re-exported here as they land.
+
+export {
+  CalendarProvider,
+  useCalendarContext,
+} from "./calendar/calendar-context.js";
+export type {
+  CalendarState,
+  UseCalendarOptions,
+} from "./calendar/use-calendar.js";
+export { useCalendar } from "./calendar/use-calendar.js";
+export { useNow } from "./clock/use-now.js";
+export { useSystemTimeZone } from "./clock/use-system-time-zone.js";
+export { useToday } from "./clock/use-today.js";
+export { CalendarContextError } from "./errors.js";
 export type {
   EventChipClassNames,
   EventChipProps,
