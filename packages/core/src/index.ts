@@ -10,8 +10,12 @@ export {
 } from "./calendar-view.js";
 export type { DateRange, TimeRange } from "./date-range.js";
 export { overlapsRange } from "./date-range.js";
+export type { DaySegment, TimedItem } from "./day-layout.js";
+export { layoutDay, MINUTES_PER_DAY } from "./day-layout.js";
 export type { CalendarEvent, EventStatus } from "./event.js";
 export { EVENT_STATUSES } from "./event.js";
+export type { DayEvents, GridFocus } from "./grid-focus.js";
+export { focusKey, nextFocus, SLOT_MINUTES } from "./grid-focus.js";
 export type { DatedItem, WeekSegment } from "./month-layout.js";
 export {
   belongsInAllDayLane,
@@ -28,3 +32,10 @@ export {
   TIME_FORMATS,
   WEEK_STARTS,
 } from "./options.js";
+export {
+  moveRange,
+  resizeRange,
+  SNAP_MINUTES,
+  sweepRange,
+  wallTime,
+} from "./reschedule.js";
