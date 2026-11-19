@@ -43,6 +43,13 @@ const meta = {
         "calendar",
       ],
     },
+    hourHeight: {
+      control: {
+        min: 1,
+        step: 0.5,
+        type: "number",
+      },
+    },
     slotMinutes: {
       control: {
         step: 5,

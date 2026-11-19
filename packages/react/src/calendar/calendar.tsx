@@ -135,6 +135,7 @@ export function Calendar<TData = unknown>(props: CalendarProps<TData>) {
     hotkeyHandlers,
     hotkeys,
     hotkeysScope,
+    hourHeight,
     isEventEditable,
     labels,
     locale,
@@ -238,6 +239,7 @@ export function Calendar<TData = unknown>(props: CalendarProps<TData>) {
                   draftRange={draftRange}
                   editable={editable}
                   events={events}
+                  hourHeight={hourHeight}
                   isEventEditable={isEventEditable}
                   onAllDayCollapsedChange={onAllDayCollapsedChange}
                   onEventChange={onEventChange}

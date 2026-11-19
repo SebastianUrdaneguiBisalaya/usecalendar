@@ -249,6 +249,7 @@ The complete calendar: a toolbar plus the month, week or day view. `Calendar` is
 | `draftRange` | `TimeRange \| null` | | Previews a new event's times on the grid while your form is open. |
 | `defaultEventDuration` | `number` | `60` | Minutes of the range `onSlotClick` proposes. |
 | `slotMinutes` | `number` | `30` | Length of a grid row. Must divide 60. |
+| `hourHeight` | `number \| string` | `3` | Height of one hour in the week and day views: a number in rem, or any CSS length (`"64px"`). Rows, events and the current-time line scale with it. |
 | `snapMinutes` | `number` | `15` | Step dragged and keyboard-edited times snap to. Must divide 60. |
 | `scrollToTime` | `Temporal.PlainTime` | one hour before now | Where the time grid scrolls on mount. |
 | `allDayCollapsed` / `defaultAllDayCollapsed` / `onAllDayCollapsedChange` | `boolean` | `false` | Whether the all-day lane is collapsed to two rows. |

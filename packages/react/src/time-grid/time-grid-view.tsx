@@ -57,6 +57,7 @@ import {
   COMPACT_EVENT_MINUTES,
   DAY_HEADER_REM,
   gridStyle,
+  HOUR_HEIGHT_REM,
   MIN_EVENT_MINUTES,
   slotsPerDay,
 } from "./grid-geometry.js";
@@ -232,6 +233,16 @@ export type TimeGridViewProps<TData = unknown> = {
     | ((props: RenderEventWrapperProps<TData>) => ReactNode)
     | undefined;
   /**
+   * Height of one hour in the grid: a number in rem, or any CSS length (`"64px"`, `"4rem"`). Every row, event and
+   * the current-time line scale with it; `slotMinutes` splits it into rows. Numbers in rem follow the user's font size.
+   *
+   * @defaultValue 3
+   * @example
+   * hourHeight={4} // roomier: 64px per hour at the default font size
+   * hourHeight="40px" // denser: fits a working day on a small screen
+   */
+  hourHeight?: number | string | undefined;
+  /**
    * Time to scroll to when the grid mounts.
    *
    * @defaultValue one hour before the current hour
@@ -239,7 +250,7 @@ export type TimeGridViewProps<TData = unknown> = {
   scrollToTime?: Temporal.PlainTime | undefined;
   /** The event shown as selected (`aria-pressed` and a ring), e.g. the one open in your side panel. */
   selectedEventId?: string | null | undefined;
-  /** Length of one row in minutes; must divide 60 evenly. The hour height doesn't change. @defaultValue 30 */
+  /** Length of one row in minutes; must divide 60 evenly. The hour height (`hourHeight`) doesn't change. @defaultValue 30 */
   slotMinutes?: number | undefined;
   /** Step that dragged and keyboard-edited times snap to; must divide 60 evenly. @defaultValue 15 */
   snapMinutes?: number | undefined;
@@ -275,6 +286,7 @@ export function TimeGridView<TData = unknown>({
   draftRange,
   editable = true,
   events,
+  hourHeight = HOUR_HEIGHT_REM,
   isEventEditable,
   onAllDayCollapsedChange,
   onEventChange,
@@ -663,7 +675,7 @@ export function TimeGridView<TData = unknown>({
           refocusId.current = null;
         }}
         role="grid"
-        style={gridStyle(days.length, headerRem, slotMinutes)}
+        style={gridStyle(days.length, headerRem, slotMinutes, hourHeight)}
         {...drag.gridHandlers}
       >
         <div
