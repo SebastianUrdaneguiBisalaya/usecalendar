@@ -160,3 +160,22 @@
     background-color: transparent;
   }
 }
+
+/*
+ * Popovers (`data-uc-popover`, e.g. the month view's "+N more") open in the top layer with the native Popover
+ * API. Where CSS anchor positioning is supported, they sit under their trigger (which sets `anchor-name`) and
+ * flip to stay on screen; elsewhere they keep the browser's centered default.
+ */
+@layer components {
+  @supports (position-area: bottom) {
+    [data-uc-popover] {
+      inset: auto;
+      margin: 0.25rem 0;
+      position-area: bottom span-right;
+      position-try-fallbacks:
+        flip-block,
+        flip-inline,
+        flip-block flip-inline;
+    }
+  }
+}

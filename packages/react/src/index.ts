@@ -54,3 +54,11 @@ export {
   DEFAULT_LOCALE,
   useCalendarLocale,
 } from "./locale/locale-context.js";
+export type {
+  MonthEventPlacement,
+  MonthMorePopoverProps,
+  MonthViewClassNames,
+  MonthViewProps,
+  RenderEventWrapperProps,
+} from "./month/month-view.js";
+export { MonthView } from "./month/month-view.js";
