@@ -13,6 +13,7 @@ import { isMacPlatform } from "./platform.js";
 export type CalendarKeymap = {
   /** The grid action bound to a key press inside a grid, or `null`. */
   gridActionFor: (
+    /** A DOM keyboard event, or just the fields the matcher reads. */
     event:
       | KeyboardEvent
       | {
@@ -23,6 +24,7 @@ export type CalendarKeymap = {
           shiftKey: boolean;
         },
   ) => GridHotkeyAction | null;
+  /** The keys bound to every action; an empty list means the action is off. */
   keymap: ResolvedKeymap;
 };
 

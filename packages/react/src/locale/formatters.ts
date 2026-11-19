@@ -4,6 +4,7 @@ import type { TimeFormat } from "@usecalendar/core";
 export type FormatContext = {
   /** BCP 47 locale, e.g. `"en-US"` or `"es-PE"`. */
   locale: string;
+  /** Clock format the time should use. */
   timeFormat: TimeFormat;
   /** IANA time zone the calendar is shown in. */
   timeZone: string;

@@ -37,10 +37,15 @@ export type EventVariant = "bar" | "block" | "dot";
 
 /** Attributes that give an element the built-in event look; see {@link eventSurfaceProps}. */
 export type EventSurfaceProps = {
+  /** Present once the event has ended. */
   "data-past"?: true;
+  /** Present for tentative events. */
   "data-tentative"?: true;
+  /** Marks the element for the stylesheet's event rules. */
   "data-uc-event": "";
+  /** How the surface is drawn. */
   "data-variant": EventVariant;
+  /** Sets `--uc-event-color` when the event has a color; nothing else. */
   style: CSSProperties;
 };
 

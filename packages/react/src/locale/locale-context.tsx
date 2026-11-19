@@ -35,9 +35,13 @@ export type CalendarLocaleOptions = {
 
 /** Resolved locale options every component reads. */
 export type CalendarLocale = {
+  /** Every date and time formatter, defaults filled in. */
   formatters: CalendarFormatters;
+  /** Every text label, defaults filled in. */
   labels: CalendarLabels;
+  /** BCP 47 locale every date and time is formatted in. */
   locale: string;
+  /** Clock format for every time shown. */
   timeFormat: TimeFormat;
 };
 

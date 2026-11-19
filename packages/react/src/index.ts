@@ -1,9 +1,19 @@
 // Public surface of @usecalendar/react. Components and hooks are re-exported here as they land.
 
+export type {
+  CalendarClassNames,
+  CalendarProps,
+} from "./calendar/calendar.js";
+export { Calendar } from "./calendar/calendar.js";
 export {
   CalendarProvider,
   useCalendarContext,
 } from "./calendar/calendar-context.js";
+export type {
+  CalendarToolbarClassNames,
+  CalendarToolbarProps,
+} from "./calendar/calendar-toolbar.js";
+export { CalendarToolbar } from "./calendar/calendar-toolbar.js";
 export type {
   CalendarState,
   UseCalendarOptions,
