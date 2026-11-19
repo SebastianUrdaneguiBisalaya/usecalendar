@@ -14,6 +14,11 @@ export { useSystemTimeZone } from "./clock/use-system-time-zone.js";
 export { useToday } from "./clock/use-today.js";
 export { CalendarContextError } from "./errors.js";
 export type {
+  EventBlockClassNames,
+  EventBlockProps,
+} from "./events/event-block.js";
+export { EventBlock } from "./events/event-block.js";
+export type {
   EventChipClassNames,
   EventChipProps,
 } from "./events/event-chip.js";
@@ -24,6 +29,7 @@ export type {
   EventVariant,
 } from "./events/event-style.js";
 export { eventLook, eventSurfaceProps, isPast } from "./events/event-style.js";
+export type { RenderEventWrapperProps } from "./events/render-event-wrapper.js";
 export { shouldIgnoreHotkey } from "./hotkeys/ignore.js";
 export type { CalendarKeymap } from "./hotkeys/keymap-context.js";
 export {
@@ -59,6 +65,10 @@ export type {
   MonthMorePopoverProps,
   MonthViewClassNames,
   MonthViewProps,
-  RenderEventWrapperProps,
 } from "./month/month-view.js";
 export { MonthView } from "./month/month-view.js";
+export type {
+  TimeGridViewClassNames,
+  TimeGridViewProps,
+} from "./time-grid/time-grid-view.js";
+export { TimeGridView } from "./time-grid/time-grid-view.js";

@@ -45,6 +45,8 @@ export type CalendarLabels = {
   next: string;
   /** Toolbar button that moves to the previous day, week or month. */
   previous: string;
+  /** Read after a tentative event's title and time by screen readers in the day and week views. */
+  tentative: string;
   /** Toolbar button that goes back to today. */
   today: string;
   /** Names of the views in the toolbar's view switcher. */
@@ -78,6 +80,7 @@ export const DEFAULT_LABELS: CalendarLabels = {
   moreEvents: (count) => `+${count} more`,
   next: "Next",
   previous: "Previous",
+  tentative: "Tentative",
   today: "Today",
   views: {
     day: "Day",

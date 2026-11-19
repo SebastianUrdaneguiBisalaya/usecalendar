@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   moveRange,
+  rangeAt,
   resizeRange,
   sweepRange,
   wallTime,
@@ -245,6 +246,24 @@ describe("sweepRange", () => {
     expect(sweepRange(day, 9 * 60 + 5, 9 * 60 + 40, LIMA, 30)).toEqual({
       endAt: "2026-03-10T15:00:00Z",
       startAt: "2026-03-10T14:00:00Z",
+    });
+  });
+});
+
+describe("rangeAt", () => {
+  const day = Temporal.PlainDate.from("2026-11-18");
+
+  it("starts at the minute of the day in the time zone and lasts the duration", () => {
+    expect(rangeAt(day, 9 * 60 + 30, 60, "America/Lima")).toEqual({
+      endAt: "2026-11-18T15:30:00Z",
+      startAt: "2026-11-18T14:30:00Z",
+    });
+  });
+
+  it("can run past midnight", () => {
+    expect(rangeAt(day, 23 * 60 + 30, 60, "UTC")).toEqual({
+      endAt: "2026-11-19T00:30:00Z",
+      startAt: "2026-11-18T23:30:00Z",
     });
   });
 });

@@ -20,6 +20,7 @@ import { useCalendarContext } from "../calendar/calendar-context.js";
 import { useNow } from "../clock/use-now.js";
 import { EventChip, type EventChipProps } from "../events/event-chip.js";
 import { eventLook } from "../events/event-style.js";
+import type { RenderEventWrapperProps } from "../events/render-event-wrapper.js";
 import { useCalendarKeymap } from "../hotkeys/keymap-context.js";
 import { useCalendarLocale } from "../locale/locale-context.js";
 import { cn } from "../utils/cn.js";
@@ -72,13 +73,6 @@ export type MonthViewClassNames = {
 
 /** Where an event is drawn: in a week row of the grid, or in a day's "+N more" popover. */
 export type MonthEventPlacement = "grid" | "more";
-
-/** Props of `renderEventWrapper`. */
-export type RenderEventWrapperProps<TData = unknown> = {
-  /** The clickable event element; render it inside your wrapper (e.g. as a context-menu trigger). */
-  children: ReactElement;
-  event: CalendarEvent<TData>;
-};
 
 /** Props of `renderMorePopover`. */
 export type MonthMorePopoverProps<TData = unknown> = {

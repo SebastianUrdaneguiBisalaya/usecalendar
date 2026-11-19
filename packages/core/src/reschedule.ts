@@ -131,3 +131,25 @@ export const sweepRange = (
     wallTime(day, Math.max(last, start + snapMinutes), timeZone),
   );
 };
+
+/**
+ * A range of `durationMinutes` starting `minute` minutes into `day` in `timeZone`: what clicking an empty slot (or
+ * Enter on it) proposes for a new event.
+ *
+ * @example
+ * rangeAt(Temporal.PlainDate.from("2026-11-18"), 9 * 60, 60, "UTC"); // 09:00Z – 10:00Z
+ */
+export const rangeAt = (
+  day: Temporal.PlainDate,
+  minute: number,
+  durationMinutes: number,
+  timeZone: string,
+): TimeRange => {
+  const start = wallTime(day, minute, timeZone);
+  return toRange(
+    start,
+    start.add({
+      minutes: Math.max(1, Math.round(durationMinutes)),
+    }),
+  );
+};

@@ -31,6 +31,9 @@
     --uc-event-tint: 30%;
     /* The same, for events that have ended. */
     --uc-event-past-tint: 15%;
+    /* How much of the event color tints an event block in the day and week views, and once it has ended. */
+    --uc-event-block-tint: 22%;
+    --uc-event-block-past-tint: 11%;
     /* How much of the event color a past event keeps in its accent; the rest is muted foreground. */
     --uc-event-past-mix: 40%;
     /* Diagonal stripes of tentative events. */
@@ -52,6 +55,7 @@
   --uc-popover-foreground: var(--popover-foreground, oklch(0.145 0 0));
   --uc-border: var(--border, oklch(0.922 0 0));
   --uc-ring: var(--ring, oklch(0.708 0 0));
+  --uc-destructive: var(--destructive, oklch(0.577 0.245 27.325));
   --uc-radius: var(--radius, 0.625rem);
 }
 
@@ -69,6 +73,7 @@
   --uc-popover-foreground: var(--popover-foreground, oklch(0.985 0 0));
   --uc-border: var(--border, oklch(1 0 0 / 10%));
   --uc-ring: var(--ring, oklch(0.556 0 0));
+  --uc-destructive: var(--destructive, oklch(0.704 0.191 22.216));
 }
 
 @media (prefers-color-scheme: dark) {
@@ -85,6 +90,7 @@
     --uc-popover-foreground: var(--popover-foreground, oklch(0.985 0 0));
     --uc-border: var(--border, oklch(1 0 0 / 10%));
     --uc-ring: var(--ring, oklch(0.556 0 0));
+    --uc-destructive: var(--destructive, oklch(0.704 0.191 22.216));
   }
 }
 
@@ -101,12 +107,13 @@
   --color-uc-popover-foreground: var(--uc-popover-foreground);
   --color-uc-border: var(--uc-border);
   --color-uc-ring: var(--uc-ring);
+  --color-uc-destructive: var(--uc-destructive);
   --radius-uc: var(--uc-radius);
 }
 
 /*
  * Event surfaces. `EventChip` (or any element with `data-uc-event`) sets `--uc-event-color` inline and
- * exposes its state as `data-variant` ("bar" | "dot"), `data-past` and `data-tentative`.
+ * exposes its state as `data-variant` ("bar" | "block" | "dot"), `data-past` and `data-tentative`.
  */
 @layer components {
   [data-uc-event] {
@@ -123,7 +130,16 @@
     --uc-event-fill: var(--uc-event-past-tint);
   }
 
-  [data-uc-event][data-variant="bar"] {
+  [data-uc-event][data-variant="block"] {
+    --uc-event-fill: var(--uc-event-block-tint);
+    border-left-color: var(--uc-event-accent);
+  }
+
+  [data-uc-event][data-variant="block"][data-past] {
+    --uc-event-fill: var(--uc-event-block-past-tint);
+  }
+
+  [data-uc-event]:is([data-variant="bar"], [data-variant="block"]) {
     background-color: color-mix(
       in oklab,
       var(--uc-event-accent) var(--uc-event-fill),
@@ -131,7 +147,10 @@
     );
   }
 
-  [data-uc-event][data-variant="bar"][data-tentative] {
+  [data-uc-event]:is(
+    [data-variant="bar"],
+    [data-variant="block"]
+  )[data-tentative] {
     background-color: color-mix(
       in oklab,
       var(--uc-event-accent) calc(var(--uc-event-fill) / 2),

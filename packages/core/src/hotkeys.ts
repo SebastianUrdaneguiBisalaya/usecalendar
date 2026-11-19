@@ -385,3 +385,45 @@ export const describeHotkey = (combo: string, isMac: boolean): string => {
   ];
   return names.filter((name) => typeof name === "string").join("+");
 };
+
+const ARIA_KEY_NAMES: Readonly<Record<string, string>> = {
+  " ": "Space",
+  "+": "Plus",
+  arrowdown: "ArrowDown",
+  arrowleft: "ArrowLeft",
+  arrowright: "ArrowRight",
+  arrowup: "ArrowUp",
+  backspace: "Backspace",
+  delete: "Delete",
+  end: "End",
+  enter: "Enter",
+  escape: "Escape",
+  home: "Home",
+  pagedown: "PageDown",
+  pageup: "PageUp",
+  tab: "Tab",
+};
+
+/**
+ * A key combination in the syntax of the `aria-keyshortcuts` attribute (`KeyboardEvent.key` names joined by `+`,
+ * modifiers first), with `mod` resolved for the platform.
+ *
+ * @example
+ * ariaKeyShortcut("alt+shift+arrowup", false); // "Alt+Shift+ArrowUp"
+ * ariaKeyShortcut("mod+z", true); // "Meta+Z"
+ */
+export const ariaKeyShortcut = (combo: string, isMac: boolean): string => {
+  const { alt, ctrl, key, meta, mod, shift } = parseHotkey(combo);
+  return [
+    (ctrl || (mod && !isMac)) && "Control",
+    (meta || (mod && isMac)) && "Meta",
+    alt && "Alt",
+    shift && "Shift",
+    ARIA_KEY_NAMES[key] ??
+      (key.length === 1
+        ? key.toUpperCase()
+        : `${key[0]?.toUpperCase()}${key.slice(1)}`),
+  ]
+    .filter((name) => typeof name === "string")
+    .join("+");
+};

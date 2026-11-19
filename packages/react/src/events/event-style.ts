@@ -29,8 +29,11 @@ export const eventLook = (
   tentative: event.status === "tentative",
 });
 
-/** How an event surface is drawn: a filled `"bar"`, or a `"dot"` next to the time and title. */
-export type EventVariant = "bar" | "dot";
+/**
+ * How an event surface is drawn: a filled `"bar"` (month view, all-day lane), a `"dot"` next to the time and title
+ * (month view), or a `"block"` placed by time in the day and week views (a lighter fill with an accent edge).
+ */
+export type EventVariant = "bar" | "block" | "dot";
 
 /** Attributes that give an element the built-in event look; see {@link eventSurfaceProps}. */
 export type EventSurfaceProps = {
@@ -46,7 +49,8 @@ export type EventSurfaceProps = {
  * events and follows the same `--uc-event-*` variables (tint, past tint, stripes) and light/dark theme.
  *
  * The look itself lives in the stylesheet: a `"bar"` element gets the tinted fill (striped when tentative,
- * muted when past); inside a `"dot"` element, add `data-uc-event-dot` to the dot.
+ * muted when past); a `"block"` element the same with a lighter tint and its left border in the event color (give
+ * it a width, e.g. `border-l-[3px]`); inside a `"dot"` element, add `data-uc-event-dot` to the dot.
  *
  * @param color - Any CSS color; omit it to use the theme's muted foreground.
  *
