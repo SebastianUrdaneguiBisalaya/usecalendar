@@ -27,6 +27,8 @@ export type CalendarFormatters = {
   fullDate: (day: Temporal.PlainDate, context: FormatContext) => string;
   /** Hour label in the time grid's gutter, e.g. `"9:00 AM"` or `"09:00"`. `hour` is 0–23. */
   hour: (hour: number, context: FormatContext) => string;
+  /** Abbreviated month name above a day of the mini calendar, e.g. `"Nov"`. */
+  monthShort: (day: Temporal.PlainDate, context: FormatContext) => string;
   /** Month and year, e.g. `"November 2026"`. */
   monthYear: (day: Temporal.PlainDate, context: FormatContext) => string;
   /** Start time of an event, e.g. `"9:30 AM"`. */
@@ -88,6 +90,11 @@ export const DEFAULT_FORMATTERS: CalendarFormatters = {
       ...timeOptions(context),
       timeZone: "UTC",
     }).format(new Date(Date.UTC(2000, 0, 1, hour))),
+  monthShort: (day, { locale }) =>
+    intl(locale, {
+      month: "short",
+      timeZone: "UTC",
+    }).format(utcDate(day)),
   monthYear: (day, { locale }) =>
     intl(locale, {
       month: "long",

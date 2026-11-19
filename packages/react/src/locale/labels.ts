@@ -39,14 +39,20 @@ export type CalendarLabels = {
   expandAllDay: string;
   /** Accessible name of the calendar grid. */
   grid: string;
+  /** Accessible name of the mini calendar's day strip. */
+  miniCalendar: string;
   /** Overflow button of a day or column with hidden events, e.g. `"+3 more"`. */
   moreEvents: (count: number) => string;
   /** Accessible name of the toolbar's today/previous/next buttons. */
   navigation: string;
   /** Toolbar button that moves to the next day, week or month. */
   next: string;
+  /** Mini calendar button that shows the next days. */
+  nextDays: string;
   /** Toolbar button that moves to the previous day, week or month. */
   previous: string;
+  /** Mini calendar button that shows the previous days. */
+  previousDays: string;
   /** Read after a tentative event's title and time by screen readers in the day and week views. */
   tentative: string;
   /** Toolbar button that goes back to today. */
@@ -81,10 +87,13 @@ export const DEFAULT_LABELS: CalendarLabels = {
   },
   expandAllDay: "Show all all-day events",
   grid: "Schedule",
+  miniCalendar: "Dates",
   moreEvents: (count) => `+${count} more`,
   navigation: "Calendar navigation",
   next: "Next",
+  nextDays: "Next days",
   previous: "Previous",
+  previousDays: "Previous days",
   tentative: "Tentative",
   today: "Today",
   viewSwitcher: "View",

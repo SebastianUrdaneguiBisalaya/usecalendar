@@ -1,5 +1,6 @@
 import { CALENDAR_VIEWS, type CalendarView } from "@usecalendar/core";
 import { useCalendarLocale } from "../locale/locale-context.js";
+import { Chevron } from "../utils/chevron.js";
 import { cn } from "../utils/cn.js";
 import { useCalendarContext } from "./calendar-context.js";
 
@@ -36,21 +37,6 @@ export type CalendarToolbarProps = {
    */
   views?: readonly CalendarView[] | undefined;
 };
-
-const Chevron = ({ direction }: { direction: "left" | "right" }) => (
-  <svg
-    aria-hidden
-    className="size-4"
-    fill="none"
-    stroke="currentColor"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth={2}
-    viewBox="0 0 24 24"
-  >
-    <path d={direction === "left" ? "m15 18-6-6 6-6" : "m9 18 6-6-6-6"} />
-  </svg>
-);
 
 const BUTTON =
   "m-0 inline-flex h-8 cursor-pointer items-center justify-center rounded-uc border-0 bg-transparent font-medium text-sm text-uc-foreground outline-none hover:bg-uc-accent hover:text-uc-accent-foreground focus-visible:ring-2 focus-visible:ring-uc-ring";

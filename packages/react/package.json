@@ -40,6 +40,11 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
     },
+    "./mini": {
+      "types": "./dist/mini/index.d.ts",
+      "import": "./dist/mini/index.mjs",
+      "require": "./dist/mini/index.cjs"
+    },
     "./styles.css": "./dist/styles.css",
     "./theme.css": "./dist/theme.css",
     "./package.json": "./package.json"
