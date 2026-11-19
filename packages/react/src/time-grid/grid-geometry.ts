@@ -25,17 +25,27 @@ const HEADER = "var(--uc-time-grid-header)";
 export const slotsPerDay = (slotMinutes: number): number =>
   MINUTES_PER_DAY / slotMinutes;
 
-/** Grid tracks: the hour gutter and one column per day; the header row and one row per slot. */
+/**
+ * Grid tracks: the hour gutter and one column per day; the header row and one row per slot.
+ *
+ * `minWidth` matches the tracks' minimum, so the grid's own box grows with them instead of the tracks overflowing it.
+ * That box is the containing block of the sticky hour gutter and of every absolutely placed box (`boxStyle`): if it
+ * were only as wide as the scroll container, the gutter would scroll away at the end of a sideways scroll and events
+ * would be laid out over the visible width instead of their columns.
+ */
 export const gridStyle = (
   dayCount: number,
   headerRem: number,
   slotMinutes: number,
-): CSSProperties =>
-  ({
+): CSSProperties => {
+  const minDayRem = dayCount > 1 ? MIN_DAY_REM : 0;
+  return {
     "--uc-time-grid-header": `${headerRem}rem`,
-    gridTemplateColumns: `${GUTTER_REM}rem repeat(${dayCount}, minmax(${dayCount > 1 ? MIN_DAY_REM : 0}rem, 1fr))`,
+    gridTemplateColumns: `${GUTTER_REM}rem repeat(${dayCount}, minmax(${minDayRem}rem, 1fr))`,
     gridTemplateRows: `${HEADER} repeat(${slotsPerDay(slotMinutes)}, ${minutesToRem(slotMinutes)}rem)`,
-  }) as CSSProperties;
+    minWidth: `${GUTTER_REM + dayCount * minDayRem}rem`,
+  } as CSSProperties;
+};
 
 /** Absolute box for something spanning `[startMinute, endMinute)` in a day column, inside lane `column` of `columns`. */
 export const boxStyle = (
