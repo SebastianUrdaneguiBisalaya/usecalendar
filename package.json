@@ -22,6 +22,7 @@
     "test": "pnpm -r run test",
     "test:watch": "pnpm -r --parallel run test:watch",
     "bench": "pnpm -r run bench",
+    "bench:report": "pnpm --filter @usecalendar/react run bench:report",
     "prepare": "husky",
     "changeset": "changeset",
     "version-packages": "changeset version",
