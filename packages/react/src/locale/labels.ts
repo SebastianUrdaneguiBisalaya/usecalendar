@@ -41,6 +41,8 @@ export type CalendarLabels = {
   grid: string;
   /** Overflow button of a day or column with hidden events, e.g. `"+3 more"`. */
   moreEvents: (count: number) => string;
+  /** Accessible name of the toolbar's today/previous/next buttons. */
+  navigation: string;
   /** Toolbar button that moves to the next day, week or month. */
   next: string;
   /** Toolbar button that moves to the previous day, week or month. */
@@ -49,6 +51,8 @@ export type CalendarLabels = {
   tentative: string;
   /** Toolbar button that goes back to today. */
   today: string;
+  /** Accessible name of the toolbar's view switcher. */
+  viewSwitcher: string;
   /** Names of the views in the toolbar's view switcher. */
   views: Record<CalendarView, string>;
   /** Screen-reader name of a week row in the month view, e.g. `"Week 46"`. */
@@ -78,10 +82,12 @@ export const DEFAULT_LABELS: CalendarLabels = {
   expandAllDay: "Show all all-day events",
   grid: "Schedule",
   moreEvents: (count) => `+${count} more`,
+  navigation: "Calendar navigation",
   next: "Next",
   previous: "Previous",
   tentative: "Tentative",
   today: "Today",
+  viewSwitcher: "View",
   views: {
     day: "Day",
     month: "Month",
@@ -93,6 +99,7 @@ export const DEFAULT_LABELS: CalendarLabels = {
 
 /** Partial labels as accepted by the `labels` prop; `views` can be partial too. */
 export type CalendarLabelsInput = Partial<Omit<CalendarLabels, "views">> & {
+  /** Names of the views; any missing one keeps its default. */
   views?: Partial<CalendarLabels["views"]>;
 };
 

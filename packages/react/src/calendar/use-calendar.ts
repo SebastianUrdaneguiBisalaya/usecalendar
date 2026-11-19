@@ -60,13 +60,17 @@ export type CalendarState = {
   range: DateRange | null;
   /** Switches the view. */
   setView: (view: CalendarView) => void;
+  /** Whether Saturdays and Sundays are shown in the week and month views. */
   showWeekends: boolean;
+  /** Whether the month view shows week numbers. */
   showWeekNumbers: boolean;
   /** IANA time zone every day and time is shown in. */
   timeZone: string;
   /** Today in `timeZone`; `null` during server rendering. */
   today: Temporal.PlainDate | null;
+  /** The current view. */
   view: CalendarView;
+  /** First day of the week. */
   weekStart: WeekStart;
 };
 
