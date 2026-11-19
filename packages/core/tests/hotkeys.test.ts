@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  ariaKeyShortcut,
   CALENDAR_KEYMAP,
   describeHotkey,
   GLOBAL_HOTKEY_ACTIONS,
@@ -388,5 +389,21 @@ describe("describeHotkey", () => {
     expect(describeHotkey(".", false)).toBe(".");
     expect(describeHotkey("ctrl+plus", false)).toBe("Ctrl+Plus");
     expect(describeHotkey("f2", false)).toBe("F2");
+  });
+});
+
+describe("ariaKeyShortcut", () => {
+  it("uses KeyboardEvent.key names with modifiers first", () => {
+    expect(ariaKeyShortcut("alt+shift+arrowup", false)).toBe(
+      "Alt+Shift+ArrowUp",
+    );
+    expect(ariaKeyShortcut("enter", false)).toBe("Enter");
+    expect(ariaKeyShortcut("space", false)).toBe("Space");
+    expect(ariaKeyShortcut("t", false)).toBe("T");
+  });
+
+  it("resolves mod for the platform", () => {
+    expect(ariaKeyShortcut("mod+z", true)).toBe("Meta+Z");
+    expect(ariaKeyShortcut("mod+z", false)).toBe("Control+Z");
   });
 });

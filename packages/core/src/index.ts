@@ -33,6 +33,7 @@ export type {
   ResolvedKeymap,
 } from "./hotkeys.js";
 export {
+  ariaKeyShortcut,
   CALENDAR_HOTKEY_ACTIONS,
   CALENDAR_KEYMAP,
   describeHotkey,
@@ -61,6 +62,7 @@ export {
 } from "./options.js";
 export {
   moveRange,
+  rangeAt,
   resizeRange,
   SNAP_MINUTES,
   sweepRange,
