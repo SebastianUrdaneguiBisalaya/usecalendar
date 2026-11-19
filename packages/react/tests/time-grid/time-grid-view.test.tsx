@@ -111,6 +111,51 @@ describe("TimeGridView", () => {
     ).toContain("--uc-time-grid-hour:64px");
   });
 
+  it("sizes short events by height, so they read the same at any hourHeight", () => {
+    const half = [
+      event("a", "2030-01-16T09:00:00Z", "2030-01-16T09:30:00Z"),
+    ];
+    // 30 minutes is 1.5rem at the default 3rem per hour: one line.
+    expect(
+      render({
+        events: half,
+      }),
+    ).toContain("flex-row items-baseline");
+    // At 6rem per hour it is 3rem tall: room for title and time on two lines.
+    const tall = render({
+      events: half,
+      hourHeight: 6,
+    });
+    expect(tall).not.toContain("flex-row items-baseline");
+    expect(tall).toContain("flex-col");
+
+    // A 5-minute event is drawn 0.75rem tall: 15 minutes at 3rem per hour, 30 minutes at 1.5rem per hour.
+    const short = [
+      event("b", "2030-01-16T09:00:00Z", "2030-01-16T09:05:00Z"),
+    ];
+    expect(
+      render({
+        events: short,
+      }),
+    ).toContain("height:calc(var(--uc-time-grid-hour) * 0.25)");
+    expect(
+      render({
+        events: short,
+        hourHeight: "1.5rem",
+      }),
+    ).toContain("height:calc(var(--uc-time-grid-hour) * 0.5)");
+  });
+
+  it("uses the default event sizes for CSS lengths until the grid is measured", () => {
+    const html = render({
+      events: [
+        event("b", "2030-01-16T09:00:00Z", "2030-01-16T09:05:00Z"),
+      ],
+      hourHeight: "24px",
+    });
+    expect(html).toContain("height:calc(var(--uc-time-grid-hour) * 0.25)");
+  });
+
   it("places timed events by time, side by side when they overlap", () => {
     const html = render({
       events: [
