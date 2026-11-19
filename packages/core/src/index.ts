@@ -10,6 +10,24 @@ export {
 } from "./calendar-view.js";
 export type { DateRange, TimeRange } from "./date-range.js";
 export { overlapsRange } from "./date-range.js";
+export type {
+  DateLimits,
+  StripAlign,
+  StripFocus,
+  StripOptions,
+  StripStep,
+} from "./date-strip.js";
+export {
+  addStripDays,
+  clampDay,
+  isDayInRange,
+  nextStripFocus,
+  STRIP_ALIGNS,
+  STRIP_STEPS,
+  shiftStrip,
+  stripDays,
+  stripStart,
+} from "./date-strip.js";
 export type { DaySegment, TimedItem } from "./day-layout.js";
 export { layoutDay, MINUTES_PER_DAY } from "./day-layout.js";
 export type { CalendarEvent, EventStatus } from "./event.js";
