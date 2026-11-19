@@ -27,6 +27,8 @@ packages/
     src/mini/index.ts   → "@usecalendar/react/mini" (the day strip only)
     src/styles/         theme.css (Tailwind v4 apps) and index.css (→ styles.css, apps without Tailwind)
     tests/              vitest: SSR markup tests and jsdom hook/interaction tests
+apps/
+  storybook/  @usecalendar/storybook: private Storybook for reviewing the UI by hand (never published)
 ```
 
 - Only the entry files (`src/index.ts`, and `src/mini/index.ts` in React) decide the public API. Anything they don't re-export is internal and can be refactored freely.
@@ -44,19 +46,27 @@ Run them from the repository root. Each one runs in every package.
 | `pnpm run typecheck` | `tsc --noEmit` in every package. |
 | `pnpm run lint` | Biome lint and format check. `pnpm run lint:fix` applies fixes. |
 | `pnpm run test` | Vitest in every package. `pnpm run test:watch` for watch mode. |
+| `pnpm run storybook` | Starts the Storybook at http://localhost:6006 to review the components by hand (see below). |
 | `pnpm run smoke:pack` | Packs and installs both packages in a throwaway project and checks them (see below). Needs a build. |
 | `pnpm changeset` | Adds a changeset describing your change for the next release. |
 
-Tests never use a browser: no Playwright, Puppeteer or screenshot tests. React components are checked as server-rendered HTML (`react-dom/server`). Hook and interaction tests opt into jsdom with `// @vitest-environment jsdom`, and the `renderHook` helper is in `packages/react/tests/render-hook.tsx`. The UI itself is verified by hand.
+Tests never use a browser: no Playwright, Puppeteer or screenshot tests. React components are checked as server-rendered HTML (`react-dom/server`). Hook and interaction tests opt into jsdom with `// @vitest-environment jsdom`, and the `renderHook` helper is in `packages/react/tests/render-hook.tsx`. The UI itself is verified by hand, in the Storybook.
 
 ## Workflow after a source change
 
 1. Write or update tests next to the change (`tests/` mirrors `src/`).
 2. Run `pnpm run lint:fix`, then `pnpm run typecheck` and `pnpm run test`.
 3. If you touched packaging, entry points or styles, run `pnpm run build` and `pnpm run smoke:pack`.
-4. If the change is visible to consumers, update the README and the TSDoc of every affected export, and add a changeset (`pnpm changeset`).
+4. If the change is visible, review it in the Storybook (`pnpm run storybook`) and add or update the stories for new props, states or looks.
+5. If the change is visible to consumers, update the README and the TSDoc of every affected export, and add a changeset (`pnpm changeset`).
 
 Git hooks run some of this for you. **pre-commit** runs Biome on the staged files. **pre-push** runs `typecheck`, `test` and `build`. The hooks are a safety net, not a substitute for running the checks.
+
+## Reviewing the UI in Storybook
+
+`pnpm run storybook` starts the private Storybook in `apps/storybook` on port 6006. Stories import the packages' source, so edits hot-reload without a build. Use the toolbar to switch the theme (system, light, dark), `locale`, `timeZone`, `weekStart`, and the stylesheet: `theme.css` in a Tailwind v4 app, or the prebuilt `styles.css` of an app without Tailwind. The calendar stories keep events in state, so creating, moving and resizing really work, and every callback shows in the Actions panel. The Accessibility panel runs axe on demand.
+
+Storybook is for manual review only. It is never published or deployed, and it has no test addons (no `@storybook/addon-vitest`, Playwright, Chromatic or screenshots). See [apps/storybook/README.md](./apps/storybook/README.md).
 
 ## Checking the packed packages
 

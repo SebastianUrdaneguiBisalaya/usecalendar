@@ -1,0 +1,9 @@
+/*
+ * A Tailwind CSS v4 app: preflight + utilities, plus the library's source theme (what
+ * `@import "@usecalendar/react/theme.css"` gives a consumer), scanning the packages' source for classes.
+ */
+@import "tailwindcss";
+@import "../../../../packages/react/src/styles/theme.css";
+
+@source "../../../../packages/react/src";
+@source "../";
