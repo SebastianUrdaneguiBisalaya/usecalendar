@@ -4,6 +4,7 @@ import {
   focusKey,
   type GridFocus,
   nextFocus,
+  nextMonthFocus,
 } from "../src/grid-focus.js";
 
 const slot = (day: number, slotIndex: number): GridFocus => ({
@@ -130,5 +131,43 @@ describe("nextFocus", () => {
   it("ignores keys that aren't grid keys", () => {
     expect(nextFocus(slot(0, 18), "Enter", false, events, 3)).toBeNull();
     expect(nextFocus(slot(0, 18), "a", false, events, 3)).toBeNull();
+  });
+});
+
+describe("nextMonthFocus", () => {
+  const cell = (row: number, column: number) => ({
+    column,
+    row,
+  });
+
+  it("moves one day with ←/→ and one week with ↑/↓", () => {
+    expect(nextMonthFocus(cell(2, 3), "ArrowLeft", false, 5, 7)).toEqual(
+      cell(2, 2),
+    );
+    expect(nextMonthFocus(cell(2, 3), "ArrowRight", false, 5, 7)).toEqual(
+      cell(2, 4),
+    );
+    expect(nextMonthFocus(cell(2, 3), "ArrowUp", false, 5, 7)).toEqual(
+      cell(1, 3),
+    );
+    expect(nextMonthFocus(cell(2, 3), "ArrowDown", false, 5, 7)).toEqual(
+      cell(3, 3),
+    );
+  });
+
+  it("goes to the ends of the week with Home/End, and of the grid with Ctrl", () => {
+    expect(nextMonthFocus(cell(2, 3), "Home", false, 5, 7)).toEqual(cell(2, 0));
+    expect(nextMonthFocus(cell(2, 3), "End", false, 5, 7)).toEqual(cell(2, 6));
+    expect(nextMonthFocus(cell(2, 3), "Home", true, 5, 7)).toEqual(cell(0, 0));
+    expect(nextMonthFocus(cell(2, 3), "End", true, 5, 5)).toEqual(cell(4, 4));
+  });
+
+  it("returns null at the edges and for other keys, leaving them to global shortcuts", () => {
+    expect(nextMonthFocus(cell(0, 6), "ArrowRight", false, 5, 7)).toBeNull();
+    expect(nextMonthFocus(cell(0, 0), "ArrowLeft", false, 5, 7)).toBeNull();
+    expect(nextMonthFocus(cell(0, 0), "ArrowUp", false, 5, 7)).toBeNull();
+    expect(nextMonthFocus(cell(4, 0), "ArrowDown", false, 5, 7)).toBeNull();
+    expect(nextMonthFocus(cell(2, 3), "PageDown", false, 5, 7)).toBeNull();
+    expect(nextMonthFocus(cell(2, 3), "Enter", false, 5, 7)).toBeNull();
   });
 });
