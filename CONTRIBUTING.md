@@ -68,7 +68,7 @@ Git hooks run some of this for you. **pre-commit** runs Biome on the staged file
 - `styles.css` contains the components' utilities, and `theme.css` registers them with `@source`.
 - Types resolve from ESM (`.mts`) and CommonJS (`.cts`) files under `moduleResolution: "nodenext"`.
 
-CI runs it on every pull request. Run it yourself after changing entries, `exports`, the tsup config or the styles. `pnpm run smoke:pack -- --keep` keeps the temporary project for inspection.
+The publish workflow runs it before every release. Run it yourself after changing entries, `exports`, the tsup config or the styles. `pnpm run smoke:pack -- --keep` keeps the temporary project for inspection.
 
 ## Branches and commits
 
@@ -80,7 +80,7 @@ CI runs it on every pull request. Run it yourself after changing entries, `expor
 ## Pull request checklist
 
 - [ ] `pnpm run typecheck`, `pnpm run lint` and `pnpm run test` pass.
-- [ ] `pnpm run build` and `pnpm run smoke:pack` pass if packaging, entries or styles changed (CI runs both anyway).
+- [ ] `pnpm run build` and `pnpm run smoke:pack` pass if packaging, entries or styles changed.
 - [ ] A changeset is included if a published package changes for consumers.
 - [ ] New or changed exports have English TSDoc with a one-line description (and an example when useful).
 - [ ] Public optional props are typed `foo?: T | undefined`.

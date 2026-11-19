@@ -62,13 +62,13 @@ This is achieved by:
 2. `pnpm run typecheck` (`tsc --noEmit`) passes clean.
 3. `pnpm run lint` (biome) passes clean.
 4. `pnpm run test` passes.
-5. `pnpm run smoke:pack` passes. It packs both packages, installs the tarballs in a throwaway project and checks ESM and CJS imports of every entry, the shared React contexts, `"use client"`, the stylesheets and the types (`scripts/smoke-pack.mjs`). CI runs it on every pull request and before publishing.
+5. `pnpm run smoke:pack` passes. It packs both packages, installs the tarballs in a throwaway project and checks ESM and CJS imports of every entry, the shared React contexts, `"use client"`, the stylesheets and the types (`scripts/smoke-pack.mjs`). The publish workflow runs it before publishing.
 6. **Publishing to npm must never be run manually or by an AI agent.** This project publishes exclusively through the GitHub Actions workflow at `.github/workflows/publish.yml`. Never run `npm publish` / `pnpm publish` from a local machine or from an agent session — it's a public, irreversible action, and doing it outside CI skips the required typecheck/lint/test/build gate.
 
 ### CI publish flow (`.github/workflows/publish.yml`)
 
 - **Trigger**: a GitHub Release being published (`release: types: [published]`). Merging to `main` does **not** publish anything by itself — publishing is a separate, deliberate step: run `pnpm run version-packages` (changesets bumps the versions and writes each package's `CHANGELOG.md`), merge that to `main`, then create a GitHub Release to trigger the actual npm publish.
-- **Gate**: `typecheck` → `lint` → `test` → `build` → `smoke:pack` must all pass before publishing is attempted. The same checks run on every pull request to `main` (`.github/workflows/ci.yml`).
+- **Gate**: `typecheck` → `lint` → `test` → `build` → `smoke:pack` must all pass before publishing is attempted.
 - **Version guard, per package**: for `packages/core` and then `packages/react`, the workflow checks `pnpm view <name>@<version>` and publishes only the versions that aren't on the registry yet, so one release can ship one package or both. A registry error other than "not found" stops the release. (`npm` can't be used inside the repo: `devEngines` requires pnpm.)
 - **Required GitHub secret**: `NPM_TOKEN` (an npm **Automation** token with publish permission on the `@usecalendar` scope), configured in repository → **Settings** → **Secrets and variables** → **Actions**. Never commit this token or print it in workflow logs.
 - The workflow publishes with `--provenance`, which requires `permissions: id-token: write`.
