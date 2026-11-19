@@ -19,11 +19,15 @@
   },
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    // Node-only (see bench/tsconfig.json).
+    "bench/report.run.tsx",
+    "bench/setup-report.ts"
   ],
   "extends": "../../tsconfig.base.json",
   "include": [
     "src",
-    "tests"
+    "tests",
+    "bench"
   ]
 }

@@ -22,7 +22,8 @@
       "!node_modules",
       "!.next",
       "!dist",
-      "!build"
+      "!build",
+      "!benchmarks/results"
     ]
   },
   "formatter": {

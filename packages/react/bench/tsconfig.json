@@ -1,0 +1,16 @@
+{
+  // The benchmark report runs in Node (vitest) and writes files: it's the only code here that gets Node types,
+  // so `src` keeps failing to type-check if it ever touches a Node API.
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "types": [
+      "node"
+    ]
+  },
+  "extends": "../tsconfig.json",
+  "include": [
+    "report.run.tsx",
+    "setup-report.ts",
+    "../vitest.report.config.ts"
+  ]
+}

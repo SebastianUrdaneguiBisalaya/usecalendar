@@ -29,6 +29,7 @@ packages/
     tests/              vitest: SSR markup tests and jsdom hook/interaction tests
 apps/
   storybook/  @usecalendar/storybook: private Storybook for reviewing the UI by hand (never published)
+benchmarks/   saved `pnpm run bench:report` results (JSON + CSV), never published
 ```
 
 - Only the entry files (`src/index.ts`, and `src/mini/index.ts` in React) decide the public API. Anything they don't re-export is internal and can be refactored freely.
@@ -47,6 +48,7 @@ Run them from the repository root. Each one runs in every package.
 | `pnpm run lint` | Biome lint and format check. `pnpm run lint:fix` applies fixes. |
 | `pnpm run test` | Vitest in every package. `pnpm run test:watch` for watch mode. |
 | `pnpm run bench` | Benchmarks of core's layout and drag math (`vitest bench`). Not part of `test`; see [Performance](#performance). |
+| `pnpm run bench:report` | Runs the benchmark scenarios for 10 to 3000 events and saves JSON and CSV results in `benchmarks/results/` (about 30 s). |
 | `pnpm run storybook` | Starts the Storybook at http://localhost:6006 to review the components by hand (see below). |
 | `pnpm run smoke:pack` | Packs and installs both packages in a throwaway project and checks them (see below). Needs a build. |
 | `pnpm changeset` | Adds a changeset describing your change for the next release. |
@@ -77,6 +79,8 @@ What is automated, without a browser:
 
 - **Benchmarks** (`pnpm run bench`, in `packages/core/bench/`): the week and month layouts with 50, 500 and 2000 events, one drag step, and keyboard focus moves. Use them to compare a change against `main` on the same machine. They run on the Temporal polyfill, so read them as relative numbers.
 - **Budget tests** in the normal test suite. `packages/core/tests/performance.test.ts` times the same scenarios (median of several runs). `packages/react/tests/performance.dom.test.tsx` times React commits with `<Profiler>` in jsdom: mounting a 500-event week, moving one event, going to the next week, and mounting a 2000-event month. Budgets sit well above the measured times (noted in each test), so they fail only on a clear regression. If a deliberate change needs a higher budget, say why in the pull request.
+
+- **Saved reports** (`pnpm run bench:report`): the core scenarios plus React commit times (mounting, moving one event, navigating) for 10, 50, 100, 250, 500, 1000, 2000 and 3000 events. Results go to `benchmarks/results/` as JSON and CSV (`latest` plus a dated copy) with the machine, Node and Temporal details. Commit a report with performance work, run from a clean tree, so the before and after stay in the history. See [benchmarks/README.md](./benchmarks/README.md).
 
 What is checked by hand: real frame rates. They need a real browser, which the test suite doesn't use. In Storybook, open **Calendar/Performance** (the frame meter is on there, or turn it on for any story from the toolbar), then drag, resize and scroll while watching FPS, the worst frame and long frames. To find the cause of a slow frame, record the interaction in the Chrome DevTools Performance panel or the React DevTools Profiler.
 
