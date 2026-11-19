@@ -5,6 +5,7 @@ import type { Decorator, Preview } from "@storybook/react-vite";
 import { CalendarLocaleProvider } from "@usecalendar/react";
 import prebuiltStyles from "../src/styles/prebuilt.css?inline";
 import tailwindStyles from "../src/styles/tailwind.css?inline";
+import { FrameMeter } from "../src/support/frame-meter";
 
 /**
  * Toolbar values a story's component takes as props, listed in its `parameters.calendarGlobals` (e.g.
@@ -47,6 +48,14 @@ const withStylesAndTheme: Decorator = (Story, context) => {
   return <Story />;
 };
 
+/** The frame meter overlay (toolbar "Frame meter"), for checking frame rates by hand while interacting. */
+const withFrameMeter: Decorator = (Story, { globals: { frameMeter } }) => (
+  <>
+    <Story />
+    {frameMeter === "on" && <FrameMeter />}
+  </>
+);
+
 const withCalendarGlobals: Decorator = (Story, context) => {
   const args: Record<string, unknown> = {
     ...context.args,
@@ -78,10 +87,29 @@ const withCalendarGlobals: Decorator = (Story, context) => {
 
 const preview: Preview = {
   decorators: [
+    withFrameMeter,
     withCalendarGlobals,
     withStylesAndTheme,
   ],
   globalTypes: {
+    frameMeter: {
+      description:
+        "Frame meter: FPS, worst frame and long frames while you interact",
+      toolbar: {
+        dynamicTitle: true,
+        icon: "lightning",
+        items: [
+          {
+            title: "Frame meter off",
+            value: "off",
+          },
+          {
+            title: "Frame meter on",
+            value: "on",
+          },
+        ],
+      },
+    },
     locale: {
       description: "locale prop (BCP 47)",
       toolbar: {
@@ -184,6 +212,7 @@ const preview: Preview = {
     a11y: {
       manual: true,
     },
+    frameMeter: "off",
     locale: DEFAULT,
     styles: "tailwind",
     theme: "system",

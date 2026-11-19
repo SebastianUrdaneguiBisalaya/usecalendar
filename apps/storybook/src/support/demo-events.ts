@@ -146,3 +146,89 @@ export const weekEvents = (
     color: COLORS.amber,
   }),
 ];
+
+/** Seeded pseudo-random numbers in [0, 1) (mulberry32), so stress stories always show the same events. */
+const seeded = (seed: number): (() => number) => {
+  let state = seed;
+  return () => {
+    state = (state + 0x6d2b79f5) | 0;
+    let t = Math.imul(state ^ (state >>> 15), 1 | state);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+};
+
+/** Options of {@link stressEvents}. */
+export type StressOptions = {
+  /** Share of all-day events (1 to 5 days long). @defaultValue 0.15 */
+  allDayShare?: number;
+  /** Number of events. */
+  count: number;
+  /** Days to spread them over, starting `firstDay` days from `DEMO_DATE`. @defaultValue 7 */
+  days?: number;
+  /** Offset of the first day from `DEMO_DATE`. @defaultValue -2 (the Monday of the demo week) */
+  firstDay?: number;
+  /** Earliest and latest start hours of timed events. @defaultValue [7, 20] */
+  hours?: readonly [
+    number,
+    number,
+  ];
+  /** @defaultValue 1 */
+  seed?: number;
+};
+
+/**
+ * Many deterministic events for stress stories: timed ones (15 minutes to 3 hours, overlapping a lot) and all-day
+ * ones, in every demo color.
+ */
+export const stressEvents = ({
+  allDayShare = 0.15,
+  count,
+  days = 7,
+  firstDay = -2,
+  hours = [
+    7,
+    20,
+  ],
+  seed = 1,
+}: StressOptions): DemoEvent[] => {
+  const next = seeded(seed);
+  const palette = Object.values(COLORS);
+  const [from, to] = hours;
+  return Array.from(
+    {
+      length: count,
+    },
+    (_, index) => {
+      const day = demoDay(firstDay + Math.floor(next() * days));
+      const color = palette[index % palette.length] ?? COLORS.indigo;
+      if (next() < allDayShare)
+        return allDay(
+          `stress-${index}`,
+          `All-day ${index + 1}`,
+          day,
+          1 + Math.floor(next() * 5),
+          {
+            color,
+          },
+        );
+      const hour = from + Math.floor(next() * (to - from));
+      const minute = 15 * Math.floor(next() * 4);
+      return timed(
+        `stress-${index}`,
+        `Event ${index + 1}`,
+        day,
+        `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`,
+        15 * (1 + Math.floor(next() * 12)),
+        {
+          color,
+          ...(next() < 0.1
+            ? {
+                status: "tentative" as const,
+              }
+            : {}),
+        },
+      );
+    },
+  );
+};

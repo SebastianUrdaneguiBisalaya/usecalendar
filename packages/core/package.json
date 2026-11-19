@@ -49,6 +49,7 @@
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
+    "bench": "vitest bench --run",
     "test:watch": "vitest",
     "prepublishOnly": "pnpm run typecheck && pnpm run test && pnpm run build"
   },
