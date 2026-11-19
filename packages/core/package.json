@@ -28,7 +28,6 @@
   "bugs": {
     "url": "https://github.com/SebastianUrdaneguiBisalaya/usecalendar/issues"
   },
-  "private": true,
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",

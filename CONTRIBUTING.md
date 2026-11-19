@@ -44,6 +44,8 @@ Run them from the repository root. Each one runs in every package.
 | `pnpm run typecheck` | `tsc --noEmit` in every package. |
 | `pnpm run lint` | Biome lint and format check. `pnpm run lint:fix` applies fixes. |
 | `pnpm run test` | Vitest in every package. `pnpm run test:watch` for watch mode. |
+| `pnpm run smoke:pack` | Packs and installs both packages in a throwaway project and checks them (see below). Needs a build. |
+| `pnpm changeset` | Adds a changeset describing your change for the next release. |
 
 Tests never use a browser: no Playwright, Puppeteer or screenshot tests. React components are checked as server-rendered HTML (`react-dom/server`). Hook and interaction tests opt into jsdom with `// @vitest-environment jsdom`, and the `renderHook` helper is in `packages/react/tests/render-hook.tsx`. The UI itself is verified by hand.
 
@@ -51,31 +53,22 @@ Tests never use a browser: no Playwright, Puppeteer or screenshot tests. React c
 
 1. Write or update tests next to the change (`tests/` mirrors `src/`).
 2. Run `pnpm run lint:fix`, then `pnpm run typecheck` and `pnpm run test`.
-3. If you touched packaging, entry points or styles, run `pnpm run build` and check `dist/`.
-4. If the change is visible to consumers, update the README and the TSDoc of every affected export.
+3. If you touched packaging, entry points or styles, run `pnpm run build` and `pnpm run smoke:pack`.
+4. If the change is visible to consumers, update the README and the TSDoc of every affected export, and add a changeset (`pnpm changeset`).
 
 Git hooks run some of this for you. **pre-commit** runs Biome on the staged files. **pre-push** runs `typecheck`, `test` and `build`. The hooks are a safety net, not a substitute for running the checks.
 
-## Trying the packed packages
+## Checking the packed packages
 
-Before changing packaging (entries, `exports`, tsup config) or a release, test the real tarballs in a separate project:
+`pnpm run smoke:pack` tests the real tarballs the way consumers install them. Run `pnpm run build` first. It packs both packages, installs them with React in a throwaway project outside the repo, and checks that:
 
-```bash
-pnpm run build
-pnpm --filter ./packages/core pack --pack-destination /tmp/usecalendar
-pnpm --filter ./packages/react pack --pack-destination /tmp/usecalendar
+- `import` (ESM) and `require` (CJS) of `@usecalendar/core`, `@usecalendar/react` and `@usecalendar/react/mini` work.
+- A `CalendarLocaleProvider` from `@usecalendar/react` applies to a `MiniCalendar` from `/mini` (the entries share their React contexts).
+- Every React bundle starts with `"use client"`.
+- `styles.css` contains the components' utilities, and `theme.css` registers them with `@source`.
+- Types resolve from ESM (`.mts`) and CommonJS (`.cts`) files under `moduleResolution: "nodenext"`.
 
-# in another project
-npm install /tmp/usecalendar/usecalendar-core-x.y.z.tgz /tmp/usecalendar/usecalendar-react-x.y.z.tgz react react-dom temporal-polyfill
-```
-
-Check that:
-
-- `import` (ESM) and `require` (CJS) of `@usecalendar/react` and `@usecalendar/react/mini` both work.
-- Types resolve in the editor and with `tsc` (`moduleResolution: "nodenext"` or `"bundler"`).
-- Every `.mjs` / `.cjs` file starts with `"use client"`.
-- A `CalendarLocaleProvider` imported from `@usecalendar/react` applies to a `MiniCalendar` imported from `/mini` (the entries share their React contexts).
-- `@usecalendar/react/theme.css` and `@usecalendar/react/styles.css` style both the calendar and the mini calendar.
+The publish workflow runs it before every release. Run it yourself after changing entries, `exports`, the tsup config or the styles. `pnpm run smoke:pack -- --keep` keeps the temporary project for inspection.
 
 ## Branches and commits
 
@@ -87,7 +80,8 @@ Check that:
 ## Pull request checklist
 
 - [ ] `pnpm run typecheck`, `pnpm run lint` and `pnpm run test` pass.
-- [ ] `pnpm run build` passes if packaging, entries or styles changed, and the packed check above is done.
+- [ ] `pnpm run build` and `pnpm run smoke:pack` pass if packaging, entries or styles changed.
+- [ ] A changeset is included if a published package changes for consumers.
 - [ ] New or changed exports have English TSDoc with a one-line description (and an example when useful).
 - [ ] Public optional props are typed `foo?: T | undefined`.
 - [ ] Components use only `uc-*` tokens. No palette colors, no `dark:` variants, no visual styles inline.
@@ -105,9 +99,28 @@ A new framework (e.g. Angular) gets its own package and must not require changes
 4. Reuse the `--uc-*` tokens and the same `classNames` slot names, `labels` keys and keyboard behavior, so apps can switch frameworks without restyling or retranslating.
 5. Add the package to the README's packages table.
 
+## Changesets
+
+Each package is versioned independently with [changesets](https://github.com/changesets/changesets), following [Semantic Versioning](https://semver.org/):
+
+```bash
+pnpm changeset   # pick the packages, the bump (major / minor / patch) and write a summary for consumers
+```
+
+Commit the generated `.changeset/*.md` file with your change. The summary becomes the changelog entry, so write it for people using the package. Tests, tooling and docs outside the packages don't need a changeset.
+
+A breaking change is a `major` bump: a changed signature or prop, a removed export, or a renamed `classNames` slot, CSS variable, `labels` key or default shortcut. Releasing `@usecalendar/core` also patch-bumps `@usecalendar/react`, because the React package depends on the exact core version it was released with.
+
 ## Releases
 
-Packages follow [Semantic Versioning](https://semver.org/) and are versioned independently. Publishing to npm happens only through the GitHub Actions workflow (`.github/workflows/publish.yml`) when a GitHub Release is published. Never run `npm publish` or `pnpm publish` locally. Changesets-based versioning is being set up in [#13](https://github.com/SebastianUrdaneguiBisalaya/usecalendar/issues/13). Until then, note user-visible changes under "Unreleased" in [CHANGELOG.md](./CHANGELOG.md).
+Only the maintainer releases, and only through GitHub Actions. Never run `npm publish` or `pnpm publish` locally.
+
+1. On a branch, run `pnpm run version-packages`. Changesets consumes the pending changesets, bumps each package's `version` and updates its `CHANGELOG.md`.
+2. Open a pull request with those changes and merge it to `main`.
+3. Publish a [GitHub Release](https://github.com/SebastianUrdaneguiBisalaya/usecalendar/releases/new) (e.g. tag `@usecalendar/react@0.2.0`, with the changelog entries as notes).
+4. `.github/workflows/publish.yml` runs typecheck → lint → test → build → smoke check, then publishes every package whose version isn't on npm yet (core first), with npm provenance.
+
+The workflow needs the `NPM_TOKEN` repository secret: an npm automation token with publish rights on the `@usecalendar` scope.
 
 ## Code of conduct
 

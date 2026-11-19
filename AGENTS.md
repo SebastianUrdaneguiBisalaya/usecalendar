@@ -62,21 +62,14 @@ This is achieved by:
 2. `pnpm run typecheck` (`tsc --noEmit`) passes clean.
 3. `pnpm run lint` (biome) passes clean.
 4. `pnpm run test` passes.
-5. Test the packed packages locally before the first real publish:
-   ```bash
-   pnpm --filter ./packages/core pack
-   pnpm --filter ./packages/react pack
-   # in another test project:
-   npm install /path/to/usecalendar-core-x.y.z.tgz /path/to/usecalendar-react-x.y.z.tgz
-   ```
-   Verify that both `import` (ESM) and `require` (CJS) work, and that types resolve correctly in the editor.
+5. `pnpm run smoke:pack` passes. It packs both packages, installs the tarballs in a throwaway project and checks ESM and CJS imports of every entry, the shared React contexts, `"use client"`, the stylesheets and the types (`scripts/smoke-pack.mjs`). The publish workflow runs it before publishing.
 6. **Publishing to npm must never be run manually or by an AI agent.** This project publishes exclusively through the GitHub Actions workflow at `.github/workflows/publish.yml`. Never run `npm publish` / `pnpm publish` from a local machine or from an agent session — it's a public, irreversible action, and doing it outside CI skips the required typecheck/lint/test/build gate.
 
 ### CI publish flow (`.github/workflows/publish.yml`)
 
-- **Trigger**: a GitHub Release being published (`release: types: [published]`). Merging to `main` does **not** publish anything by itself — publishing is a separate, deliberate step: bump `version` (following semver, see section 4), merge that to `main`, then create a GitHub Release to trigger the actual npm publish.
-- **Gate**: `typecheck` → `lint` → `test` → `build` must all pass before publishing is attempted.
-- **Version guard**: before publishing, the workflow checks `npm view <name>@<version>` and skips the publish step if that version is already on the registry.
+- **Trigger**: a GitHub Release being published (`release: types: [published]`). Merging to `main` does **not** publish anything by itself — publishing is a separate, deliberate step: run `pnpm run version-packages` (changesets bumps the versions and writes each package's `CHANGELOG.md`), merge that to `main`, then create a GitHub Release to trigger the actual npm publish.
+- **Gate**: `typecheck` → `lint` → `test` → `build` → `smoke:pack` must all pass before publishing is attempted.
+- **Version guard, per package**: for `packages/core` and then `packages/react`, the workflow checks `pnpm view <name>@<version>` and publishes only the versions that aren't on the registry yet, so one release can ship one package or both. A registry error other than "not found" stops the release. (`npm` can't be used inside the repo: `devEngines` requires pnpm.)
 - **Required GitHub secret**: `NPM_TOKEN` (an npm **Automation** token with publish permission on the `@usecalendar` scope), configured in repository → **Settings** → **Secrets and variables** → **Actions**. Never commit this token or print it in workflow logs.
 - The workflow publishes with `--provenance`, which requires `permissions: id-token: write`.
 - The `if: ${{ !github.event.repository.fork }}` guard prevents the workflow from publishing from a fork.
@@ -140,7 +133,7 @@ packages/
 - `@usecalendar/core` contains **no framework code**: no React, no DOM rendering, no JSX. Only types, constants and pure functions (date ranges, visible days, month/week layout, day layout, drag/resize math, keyboard focus model). Everything in core is unit-tested.
 - Each framework adapter is its own npm package that depends on `@usecalendar/core` and renders it with that framework's idioms. Adding a new framework must never require changes to another adapter.
 - If logic is needed by more than one adapter, it belongs in core.
-- Version each package independently with [`changesets`](https://github.com/changesets/changesets).
+- Version each package independently with [`changesets`](https://github.com/changesets/changesets) (`.changeset/config.json`). Every pull request that changes what a published package does adds a changeset (`pnpm changeset`). When `@usecalendar/core` is released, `@usecalendar/react` is patch-bumped too (`updateInternalDependents: "always"`), because its `workspace:*` dependency is published as an exact version: that keeps every core release reachable through the React package.
 - The publish gate from section 3 runs across the whole workspace (`pnpm -r run typecheck`, etc.).
 
 ## 10. Documentation website
