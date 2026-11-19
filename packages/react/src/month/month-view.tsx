@@ -14,6 +14,7 @@ import {
   type ReactElement,
   type ReactNode,
   useId,
+  useMemo,
   useState,
 } from "react";
 import { useCalendarContext } from "../calendar/calendar-context.js";
@@ -192,6 +193,31 @@ export function MonthView<TData = unknown>({
   const now = useNow();
   const id = useId();
 
+  // The weeks and their lanes only change with the month, the events and the zone: memoized so focus moves, resizes
+  // and clock ticks don't redo the layout. `date` is keyed by its string so a new but equal `PlainDate` doesn't count.
+  const dateKey = date?.toString() ?? null;
+  const weeks = useMemo(
+    () =>
+      dateKey === null
+        ? []
+        : monthWeeks(Temporal.PlainDate.from(dateKey), weekStart).map((week) =>
+            showWeekends ? week : week.filter((day) => !isWeekend(day)),
+          ),
+    [
+      dateKey,
+      showWeekends,
+      weekStart,
+    ],
+  );
+  const weekSegments = useMemo(
+    () => weeks.map((week) => layoutWeek(events, week, timeZone)),
+    [
+      events,
+      timeZone,
+      weeks,
+    ],
+  );
+
   const rootClassName = cn(
     "flex h-full min-h-0 flex-col bg-uc-background text-uc-foreground",
     classNames?.root,
@@ -212,9 +238,6 @@ export function MonthView<TData = unknown>({
     timeFormat,
     timeZone,
   };
-  const weeks = monthWeeks(date, weekStart).map((week) =>
-    showWeekends ? week : week.filter((day) => !isWeekend(day)),
-  );
   const columnCount = weeks[0]?.length ?? 7;
   const rowHeight = Math.max(MIN_ROW_PX, height / weeks.length);
   const maxLanes = Math.max(
@@ -367,8 +390,8 @@ export function MonthView<TData = unknown>({
           gridTemplateRows: `repeat(${weeks.length}, minmax(${MIN_ROW_PX}px, 1fr))`,
         }}
       >
-        {weeks.map((week) => {
-          const segments = layoutWeek(events, week, timeZone);
+        {weeks.map((week, weekIndex) => {
+          const segments = weekSegments[weekIndex] ?? [];
           const { hiddenByColumn, shown } = fitWeek(
             segments,
             week.length,

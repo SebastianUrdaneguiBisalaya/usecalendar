@@ -203,6 +203,7 @@ export const useTimeGridDrag = <TData>({
       onPointerMove: (pointer: PointerEvent<HTMLElement>) => {
         const state = pending.current;
         if (state === null || pointer.pointerId !== state.pointerId) return;
+        const wasStarted = state.started;
         if (!state.started) {
           if (
             Math.hypot(pointer.clientX - state.x, pointer.clientY - state.y) <
@@ -218,10 +219,21 @@ export const useTimeGridDrag = <TData>({
           pointer.clientY,
         );
         if (at === null) return;
+        const before = wasStarted ? rangeOf(state.drag) : null;
         state.drag = {
           ...state.drag,
           at,
         };
+        // Pointer moves fire many times per snapped step: re-render only when the preview actually moves.
+        // The ref keeps the exact position for the drop either way.
+        const after = rangeOf(state.drag);
+        if (
+          before !== null &&
+          after !== null &&
+          before.startAt === after.startAt &&
+          before.endAt === after.endAt
+        )
+          return;
         setDrag(state.drag);
       },
       onPointerUp: (pointer: PointerEvent<HTMLElement>) => {

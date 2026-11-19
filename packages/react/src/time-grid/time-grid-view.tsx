@@ -19,6 +19,7 @@ import {
   SNAP_MINUTES,
   type TimeRange,
   visibleDays,
+  type WeekSegment,
   wallTime,
 } from "@usecalendar/core";
 import {
@@ -29,6 +30,7 @@ import {
   type ReactElement,
   type ReactNode,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -41,7 +43,10 @@ import type { RenderEventWrapperProps } from "../events/render-event-wrapper.js"
 import { useCalendarKeymap } from "../hotkeys/keymap-context.js";
 import { useIsMac } from "../hotkeys/platform.js";
 import { useEventKeyboardHint } from "../hotkeys/use-event-keyboard-hint.js";
-import { useCalendarLocale } from "../locale/locale-context.js";
+import {
+  type CalendarLocale,
+  useCalendarLocale,
+} from "../locale/locale-context.js";
 import { cn } from "../utils/cn.js";
 import { AllDayLane, AllDayToggle } from "./all-day-lane.js";
 import { CurrentTimeLine } from "./current-time-line.js";
@@ -304,14 +309,23 @@ export function TimeGridView<TData = unknown>({
   const refocusId = useRef<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const days =
-    date === null
-      ? []
-      : view === "day"
-        ? visibleDays(date, "day", weekStart)
-        : visibleDays(date, "week", weekStart).filter(
-            (day) => showWeekends || !isWeekend(day),
-          );
+  // Everything below is derived from these values; memoized on them so a drag, a focus move or a clock tick doesn't
+  // redo the layout. `date` is keyed by its string so a new but equal `PlainDate` doesn't count as a change.
+  const dateKey = date?.toString() ?? null;
+  const days = useMemo(() => {
+    if (dateKey === null) return [];
+    const anchor = Temporal.PlainDate.from(dateKey);
+    return view === "day"
+      ? visibleDays(anchor, "day", weekStart)
+      : visibleDays(anchor, "week", weekStart).filter(
+          (day) => showWeekends || !isWeekend(day),
+        );
+  }, [
+    dateKey,
+    showWeekends,
+    view,
+    weekStart,
+  ]);
   const ready = days.length > 0;
   const canEdit = (event: CalendarEvent<TData>) =>
     editable &&
@@ -362,6 +376,52 @@ export function TimeGridView<TData = unknown>({
     ready,
   ]);
 
+  const layout = useMemo(
+    () => layoutGrid(events, days, timeZone, slotMinutes),
+    [
+      days,
+      events,
+      slotMinutes,
+      timeZone,
+    ],
+  );
+  const slotLabels = useMemo(
+    () =>
+      labelSlots(days, slotMinutes, {
+        formatters,
+        locale,
+        timeFormat,
+        timeZone,
+      }),
+    [
+      days,
+      formatters,
+      locale,
+      slotMinutes,
+      timeFormat,
+      timeZone,
+    ],
+  );
+  const eventTimes = useMemo(() => {
+    const context = {
+      locale,
+      timeFormat,
+      timeZone,
+    };
+    return new Map(
+      layout.timed.map((event) => [
+        event.id,
+        formatters.timeRange(event.startAt, event.endAt, context),
+      ]),
+    );
+  }, [
+    formatters,
+    layout.timed,
+    locale,
+    timeFormat,
+    timeZone,
+  ]);
+
   const rootClassName = cn(
     "h-full overflow-auto bg-uc-background text-uc-foreground",
     classNames?.root,
@@ -393,20 +453,22 @@ export function TimeGridView<TData = unknown>({
     },
     (_, slot) => slot,
   );
-  const instant = (day: Temporal.PlainDate, minute: number) =>
-    wallTime(day, minute, timeZone).toInstant().toString();
-
-  const timed = events.filter((event) => !belongsInAllDayLane(event));
-  const segmentsByDay: DaySegment<CalendarEvent<TData>>[][] = days.map((day) =>
-    layoutDay(timed, day, timeZone, MIN_EVENT_MINUTES),
-  );
+  const { dayEvents, laneSegments, segmentsBySlot, timed } = layout;
   const slotOf = (minute: number) => Math.floor(minute / slotMinutes);
-
-  const laneSegments = layoutWeek(
-    events.filter(belongsInAllDayLane),
-    days,
-    timeZone,
+  // The same few class lists repeat in every row: merge them once instead of once per cell.
+  const hourClassName = cn(
+    "sticky left-0 z-10 bg-uc-background pr-2 text-right text-[0.7rem] text-uc-muted-foreground",
+    classNames?.hour,
   );
+  const slotBase =
+    "border-uc-border border-l outline-none focus-visible:bg-uc-accent";
+  const hourSlotClassName = cn(slotBase, "border-t", classNames?.slot);
+  const halfSlotClassName = cn(
+    slotBase,
+    "border-t border-t-uc-border/40 border-dashed",
+    classNames?.slot,
+  );
+
   const laneCount = Math.max(
     0,
     ...laneSegments.map((segment) => segment.lane + 1),
@@ -424,16 +486,6 @@ export function TimeGridView<TData = unknown>({
           column < segment.firstColumn + segment.span,
       )
       .map((segment) => segment.item.title);
-  const dayEvents: DayEvents = segmentsByDay.map((segments) =>
-    segments
-      .map((segment) => ({
-        column: segment.column,
-        id: segment.item.id,
-        slot: slotOf(segment.startMinute),
-        start: segment.startMinute,
-      }))
-      .sort((a, b) => a.start - b.start || a.column - b.column),
-  );
 
   const todayIndex =
     today === null ? -1 : days.findIndex((day) => day.equals(today));
@@ -710,11 +762,7 @@ export function TimeGridView<TData = unknown>({
         {slots.map((slot) => {
           const minute = slot * slotMinutes;
           const onHour = minute % 60 === 0;
-          const firstDay = days[0] ?? date;
-          const label =
-            firstDay === null
-              ? ""
-              : formatters.time(instant(firstDay, minute), context);
+          const slotClassName = onHour ? hourSlotClassName : halfSlotClassName;
           return (
             <div
               className="contents"
@@ -722,10 +770,7 @@ export function TimeGridView<TData = unknown>({
               role="row"
             >
               <div
-                className={cn(
-                  "sticky left-0 z-10 bg-uc-background pr-2 text-right text-[0.7rem] text-uc-muted-foreground",
-                  classNames?.hour,
-                )}
+                className={hourClassName}
                 role="rowheader"
               >
                 {onHour ? (
@@ -733,7 +778,7 @@ export function TimeGridView<TData = unknown>({
                     {formatters.hour(minute / 60, context)}
                   </span>
                 ) : (
-                  <span className="sr-only">{label}</span>
+                  <span className="sr-only">{slotLabels.rows[slot]}</span>
                 )}
               </div>
               {days.map((day, dayIndex) => {
@@ -745,18 +790,8 @@ export function TimeGridView<TData = unknown>({
                 return (
                   // biome-ignore lint/a11y/useKeyWithClickEvents: the grid's onKeyDown handles Enter/Space on the focused slot.
                   <div
-                    aria-label={`${formatters.fullDate(day, context)}, ${formatters.timeRange(
-                      instant(day, minute),
-                      instant(day, minute + slotMinutes),
-                      context,
-                    )}`}
-                    className={cn(
-                      "border-uc-border border-l outline-none focus-visible:bg-uc-accent",
-                      onHour
-                        ? "border-t"
-                        : "border-t border-t-uc-border/40 border-dashed",
-                      classNames?.slot,
-                    )}
+                    aria-label={slotLabels.cells[dayIndex]?.[slot]}
+                    className={slotClassName}
                     data-focus-key={key}
                     data-hour-start={onHour || undefined}
                     key={day.toString()}
@@ -767,11 +802,9 @@ export function TimeGridView<TData = unknown>({
                     role="gridcell"
                     tabIndex={key === activeKey ? 0 : -1}
                   >
-                    {segmentsByDay[dayIndex]
-                      ?.filter(
-                        (segment) => slotOf(segment.startMinute) === slot,
-                      )
-                      .map((segment) => (
+                    {segmentsBySlot
+                      .get(slotKey(dayIndex, slot))
+                      ?.map((segment) => (
                         <Fragment key={segment.item.id}>
                           {wrap(
                             <TimeGridEvent
@@ -801,11 +834,7 @@ export function TimeGridView<TData = unknown>({
                               keyboardHint={keyboardHint}
                               label={[
                                 segment.item.title,
-                                formatters.timeRange(
-                                  segment.item.startAt,
-                                  segment.item.endAt,
-                                  context,
-                                ),
+                                eventTimes.get(segment.item.id),
                                 segment.item.status === "tentative" &&
                                   labels.tentative,
                               ]
@@ -822,11 +851,7 @@ export function TimeGridView<TData = unknown>({
                               refocus={(node) => refocus(node, segment.item.id)}
                               renderEvent={renderEvent}
                               segment={segment}
-                              time={formatters.timeRange(
-                                segment.item.startAt,
-                                segment.item.endAt,
-                                context,
-                              )}
+                              time={eventTimes.get(segment.item.id) ?? ""}
                             />,
                             segment.item,
                           )}
@@ -871,6 +896,128 @@ export function TimeGridView<TData = unknown>({
     </div>
   );
 }
+
+/** Key of a slot cell in {@link GridLayout}'s `segmentsBySlot`. */
+const slotKey = (dayIndex: number, slot: number): string =>
+  `${dayIndex}:${slot}`;
+
+/** Everything the grid draws from `events`, computed once per events/days/zone/slot size. */
+type GridLayout<TData> = {
+  /** Events per day, in reading order, for keyboard focus. */
+  dayEvents: DayEvents;
+  /** The all-day lane's segments. */
+  laneSegments: WeekSegment<CalendarEvent<TData>>[];
+  /** Timed segments by the slot cell they start in ({@link slotKey}). */
+  segmentsBySlot: Map<string, DaySegment<CalendarEvent<TData>>[]>;
+  /** Events drawn in the grid (not in the all-day lane). */
+  timed: CalendarEvent<TData>[];
+};
+
+const layoutGrid = <TData,>(
+  events: readonly CalendarEvent<TData>[],
+  days: readonly Temporal.PlainDate[],
+  timeZone: string,
+  slotMinutes: number,
+): GridLayout<TData> => {
+  const timed = events.filter((event) => !belongsInAllDayLane(event));
+  const segmentsBySlot = new Map<string, DaySegment<CalendarEvent<TData>>[]>();
+  const dayEvents = days.map((day, dayIndex) => {
+    const segments = layoutDay(timed, day, timeZone, MIN_EVENT_MINUTES);
+    for (const segment of segments) {
+      const key = slotKey(
+        dayIndex,
+        Math.floor(segment.startMinute / slotMinutes),
+      );
+      const inSlot = segmentsBySlot.get(key);
+      if (inSlot === undefined)
+        segmentsBySlot.set(key, [
+          segment,
+        ]);
+      else inSlot.push(segment);
+    }
+    return segments
+      .map((segment) => ({
+        column: segment.column,
+        id: segment.item.id,
+        slot: Math.floor(segment.startMinute / slotMinutes),
+        start: segment.startMinute,
+      }))
+      .sort((a, b) => a.start - b.start || a.column - b.column);
+  });
+  return {
+    dayEvents,
+    laneSegments: layoutWeek(
+      events.filter(belongsInAllDayLane),
+      days,
+      timeZone,
+    ),
+    segmentsBySlot,
+    timed,
+  };
+};
+
+/**
+ * Screen-reader labels of the hour gutter (`rows`, one per slot) and of every slot cell (`cells[day][slot]`). They
+ * only change with the days, slot size and locale, so they're computed once instead of on every render.
+ */
+const labelSlots = (
+  days: readonly Temporal.PlainDate[],
+  slotMinutes: number,
+  {
+    formatters,
+    locale,
+    timeFormat,
+    timeZone,
+  }: Pick<CalendarLocale, "formatters" | "locale" | "timeFormat"> & {
+    timeZone: string;
+  },
+): {
+  cells: string[][];
+  rows: string[];
+} => {
+  const context = {
+    locale,
+    timeFormat,
+    timeZone,
+  };
+  const count = slotsPerDay(slotMinutes);
+  // Each slot's end is the next one's start: convert every boundary of a day once (Temporal is the slow part).
+  const boundaries = (day: Temporal.PlainDate) =>
+    Array.from(
+      {
+        length: count + 1,
+      },
+      (_, slot) =>
+        wallTime(day, slot * slotMinutes, timeZone)
+          .toInstant()
+          .toString(),
+    );
+  const cells = days.map((day) => {
+    const date = formatters.fullDate(day, context);
+    const at = boundaries(day);
+    return Array.from(
+      {
+        length: count,
+      },
+      (_, slot) =>
+        `${date}, ${formatters.timeRange(at[slot] ?? "", at[slot + 1] ?? "", context)}`,
+    );
+  });
+  const first = days[0];
+  const firstBoundaries = first === undefined ? [] : boundaries(first);
+  return {
+    cells,
+    rows: Array.from(
+      {
+        length: count,
+      },
+      (_, slot) => {
+        const at = firstBoundaries[slot];
+        return at === undefined ? "" : formatters.time(at, context);
+      },
+    ),
+  };
+};
 
 type TimeGridEventProps<TData> = {
   ariaKeyShortcuts: string;

@@ -464,3 +464,71 @@ describe("belongsInAllDayLane", () => {
     ).toBe(false);
   });
 });
+
+describe("layoutWeek's quick pre-filter", () => {
+  it("keeps all-day items from zones a day away from the viewer's", () => {
+    // Kiritimati is UTC+14, Pago Pago UTC-11: the all-day item's instants sit about a day before the viewer's dates.
+    const zone = "Pacific/Kiritimati";
+    const start = Temporal.PlainDate.from("2030-03-11").toZonedDateTime({
+      timeZone: zone,
+    });
+    const week = Array.from(
+      {
+        length: 7,
+      },
+      (_, index) =>
+        Temporal.PlainDate.from("2030-03-11").add({
+          days: index,
+        }),
+    );
+    const segments = layoutWeek(
+      [
+        {
+          allDay: true,
+          endAt: start
+            .add({
+              days: 1,
+            })
+            .toInstant()
+            .toString(),
+          id: "far",
+          startAt: start.toInstant().toString(),
+          timeZone: zone,
+        },
+      ],
+      week,
+      "Pacific/Pago_Pago",
+    );
+    expect(segments).toMatchObject([
+      {
+        firstColumn: 0,
+        span: 1,
+      },
+    ]);
+  });
+
+  it("leaves out items far from the row", () => {
+    const week = Array.from(
+      {
+        length: 7,
+      },
+      (_, index) =>
+        Temporal.PlainDate.from("2030-03-11").add({
+          days: index,
+        }),
+    );
+    expect(
+      layoutWeek(
+        [
+          {
+            endAt: "2030-01-01T11:00:00Z",
+            id: "january",
+            startAt: "2030-01-01T10:00:00Z",
+          },
+        ],
+        week,
+        "UTC",
+      ),
+    ).toEqual([]);
+  });
+});
