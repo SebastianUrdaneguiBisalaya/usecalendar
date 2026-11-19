@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { nextFocus, nextMonthFocus } from "../src/grid-focus.js";
 import {
   ariaKeyShortcut,
+  CALENDAR_FOCUS_ACTIONS,
+  CALENDAR_FOCUS_KEYS,
   CALENDAR_KEYMAP,
   describeHotkey,
   GLOBAL_HOTKEY_ACTIONS,
@@ -111,6 +114,90 @@ describe("CALENDAR_KEYMAP", () => {
         (action) => CALENDAR_KEYMAP[action].group === "grid",
       ),
     ).toBe(true);
+  });
+});
+
+describe("CALENDAR_FOCUS_KEYS", () => {
+  // KeyboardEvent.key names of the keys the focus functions switch on.
+  const EVENT_KEYS: Readonly<Record<string, string>> = {
+    arrowdown: "ArrowDown",
+    arrowleft: "ArrowLeft",
+    arrowright: "ArrowRight",
+    arrowup: "ArrowUp",
+    end: "End",
+    home: "Home",
+    pagedown: "PageDown",
+    pageup: "PageUp",
+  };
+  const combos = Object.values(CALENDAR_FOCUS_KEYS).flatMap(({ keys }) => keys);
+  const focus = {
+    day: 1,
+    eventId: null,
+    slot: 18,
+  };
+
+  it("lists every focus action once, under the focus group", () => {
+    expect(Object.keys(CALENDAR_FOCUS_KEYS).sort()).toEqual(
+      [
+        ...CALENDAR_FOCUS_ACTIONS,
+      ].sort(),
+    );
+    expect(
+      Object.values(CALENDAR_FOCUS_KEYS).every(
+        ({ group }) => group === "focus",
+      ),
+    ).toBe(true);
+    expect(new Set(combos).size).toBe(combos.length);
+  });
+
+  it("lists only keys the time grid handles", () => {
+    for (const combo of combos) {
+      const { key, mod } = parseHotkey(combo);
+      const eventKey = EVENT_KEYS[key];
+      expect(eventKey, combo).toBeDefined();
+      expect(
+        nextFocus(focus, eventKey ?? "", mod, [], 3),
+        combo,
+      ).not.toBeNull();
+    }
+  });
+
+  it("lists every key the month grid handles", () => {
+    for (const combo of combos) {
+      const { key, mod } = parseHotkey(combo);
+      const moved = nextMonthFocus(
+        {
+          column: 3,
+          row: 2,
+        },
+        EVENT_KEYS[key] ?? "",
+        mod,
+        5,
+        7,
+      );
+      expect(moved === null, combo).toBe(
+        key === "pageup" || key === "pagedown",
+      );
+    }
+  });
+
+  it("shares only ←/→ with the defaults (next/previous outside a grid)", () => {
+    const configurable = new Set(
+      Object.values(CALENDAR_KEYMAP).flatMap(({ keys }) => keys),
+    );
+    expect(combos.filter((combo) => configurable.has(combo)).sort()).toEqual([
+      "arrowleft",
+      "arrowright",
+    ]);
+  });
+
+  it("is spelled per platform by describeHotkey", () => {
+    expect(
+      describeHotkey(CALENDAR_FOCUS_KEYS.focusFirst.keys[0] ?? "", true),
+    ).toBe("Command+Home");
+    expect(
+      describeHotkey(CALENDAR_FOCUS_KEYS.focusFirst.keys[0] ?? "", false),
+    ).toBe("Ctrl+Home");
   });
 });
 

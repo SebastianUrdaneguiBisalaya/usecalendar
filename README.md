@@ -625,7 +625,7 @@ To share one configuration between a `<MiniCalendar>` and the parts of a calenda
 | Ctrl+Home / Ctrl+End | First/last day of the grid | First/last slot of the day | |
 | PageUp / PageDown | | One hour up/down | Previous/next page |
 
-At the edge of the month grid, the arrow keys are left to the global shortcuts, so → moves to the next month.
+At the edge of the month grid, the arrow keys are left to the global shortcuts, so → moves to the next month. Ctrl and ⌘ both work for Ctrl+Home / Ctrl+End.
 
 **Everything else is configurable** through `hotkeys`. The defaults (exported as `CALENDAR_KEYMAP` from `@usecalendar/core`, shaped like a hotkey-registry keymap) are:
 
@@ -657,6 +657,30 @@ At the edge of the month grid, the arrow keys are left to the global shortcuts, 
 - **Mini calendar.** The strip reads the shortcuts of the nearest `CalendarKeymapProvider` (which `<Calendar>` renders), or its own `hotkeys` prop when given. It uses `openFocused`, `previous`, `next` and `goToToday`.
 - **Actions that touch your data** (`newEvent`, `deleteEvent`, `goToDate`, `close`) never act on their own: they fire only when you pass a handler.
 - Changing a default key is a breaking change (a major version).
+
+### Listing every key
+
+To show the calendar's keys in your own hotkey registry, shortcuts dialog or command menu, combine the keys actually bound (`resolveKeymap` applies the same `hotkeys` you pass to `<Calendar>`) with the fixed focus keys (`CALENDAR_FOCUS_KEYS`, same `{ [action]: { keys, group } }` shape, group `"focus"`). `describeHotkey` spells a combination for the platform: `mod` is ⌘ and `alt` is Option on macOS, Ctrl and Alt on Windows and Linux.
+
+```ts
+import {
+  CALENDAR_FOCUS_ACTIONS,
+  CALENDAR_FOCUS_KEYS,
+  CALENDAR_HOTKEY_ACTIONS,
+  CALENDAR_KEYMAP,
+  describeHotkey,
+  resolveKeymap,
+} from "@usecalendar/core";
+
+const isMac = /mac/i.test(navigator.platform);
+const bound = resolveKeymap(hotkeys); // the same value as <Calendar hotkeys>
+const shortcuts = [
+  ...CALENDAR_HOTKEY_ACTIONS.map((action) => ({ action, keys: bound[action], group: CALENDAR_KEYMAP[action].group })),
+  ...CALENDAR_FOCUS_ACTIONS.map((action) => ({ action, ...CALENDAR_FOCUS_KEYS[action] })),
+]
+  .filter(({ keys }) => keys.length > 0)
+  .map(({ action, group, keys }) => ({ action, group, labels: keys.map((key) => describeHotkey(key, isMac)) }));
+```
 
 ## Accessibility
 
