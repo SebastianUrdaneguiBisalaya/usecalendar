@@ -36,8 +36,8 @@ describe("render budgets", () => {
     });
     const time = take();
     expect(time).toBeGreaterThan(0);
-    // Measured ≈150 ms (development build, jsdom).
-    expect(time).toBeLessThan(800);
+    // Measured ≈135 ms (development build, jsdom).
+    expect(time).toBeLessThan(700);
   });
 
   it("re-renders the week view after one of 500 events moves", () => {
@@ -53,8 +53,8 @@ describe("render budgets", () => {
       defaultView: "week",
       events: moveFirstTimed(events),
     });
-    // Measured ≈65 ms: every slot and event re-renders, not only the moved one.
-    expect(calendar.take()).toBeLessThan(400);
+    // Measured ≈40 ms: the layout is memoized, but every slot and event still re-renders.
+    expect(calendar.take()).toBeLessThan(200);
   });
 
   it("navigates the week view to the next week with 500 events", () => {
@@ -64,8 +64,8 @@ describe("render budgets", () => {
         count: 500,
       }),
     });
-    // Measured ≈30 ms.
-    expect(clickNext(calendar)).toBeLessThan(250);
+    // Measured ≈20 ms.
+    expect(clickNext(calendar)).toBeLessThan(120);
   });
 
   it("mounts the month view with 2000 events", () => {
@@ -76,7 +76,7 @@ describe("render budgets", () => {
         days: 35,
       }),
     });
-    // Measured ≈190 ms.
-    expect(take()).toBeLessThan(1000);
+    // Measured ≈140 ms.
+    expect(take()).toBeLessThan(700);
   });
 });

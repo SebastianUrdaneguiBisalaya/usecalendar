@@ -38,8 +38,8 @@ describe("performance budgets", () => {
     const events = makeEvents({
       count: 500,
     });
-    // Measured ≈14 ms.
-    expect(median(() => layoutWeekView(events))).toBeLessThan(150);
+    // Measured ≈3.5 ms.
+    expect(median(() => layoutWeekView(events))).toBeLessThan(40);
   });
 
   it("lays out a month of 500 events", () => {
@@ -47,8 +47,8 @@ describe("performance budgets", () => {
       count: 500,
       days: 35,
     });
-    // Measured ≈24 ms.
-    expect(median(() => layoutMonthView(events))).toBeLessThan(250);
+    // Measured ≈4.5 ms.
+    expect(median(() => layoutMonthView(events))).toBeLessThan(50);
   });
 
   it("computes a drag step well within a frame", () => {

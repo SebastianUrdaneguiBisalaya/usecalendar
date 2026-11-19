@@ -363,6 +363,35 @@ describe("TimeGridView pointer drags", () => {
     });
   });
 
+  it("re-renders only when the snapped preview moves, and drops at the last position", () => {
+    const onEventChange = vi.fn();
+    const renderEvent = vi.fn(() => null);
+    const { container } = mount({
+      events: [
+        standup,
+      ],
+      onEventChange,
+      renderEvent,
+    });
+    const button = byKey(container, "2:18:series:2030-01-16");
+    pointer(button, "pointerdown", at(2, 9 * 60 + 10));
+    // Grabbed at 9:10: these all put the start at 10:10–10:12, which snaps to 10:15.
+    pointer(grid(container), "pointermove", at(2, 10 * 60 + 20));
+    const renders = renderEvent.mock.calls.length;
+    // Still within the same 15-minute snap step: nothing to redraw.
+    pointer(grid(container), "pointermove", at(2, 10 * 60 + 21));
+    pointer(grid(container), "pointermove", at(2, 10 * 60 + 22));
+    expect(renderEvent.mock.calls.length).toBe(renders);
+    // The next step moves the preview.
+    pointer(grid(container), "pointermove", at(2, 10 * 60 + 40));
+    expect(renderEvent.mock.calls.length).toBeGreaterThan(renders);
+    pointer(grid(container), "pointerup", at(2, 10 * 60 + 40));
+    expect(onEventChange).toHaveBeenCalledWith(standup, {
+      endAt: "2030-01-16T11:30:00Z",
+      startAt: "2030-01-16T10:30:00Z",
+    });
+  });
+
   it("resizes an event from its bottom edge", () => {
     const onEventChange = vi.fn();
     const { container } = mount({

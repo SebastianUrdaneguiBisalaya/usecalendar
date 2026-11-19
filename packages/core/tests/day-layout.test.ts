@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { layoutDay, MINUTES_PER_DAY } from "../src/day-layout.js";
+import { instantMs, layoutDay, MINUTES_PER_DAY } from "../src/day-layout.js";
 
 const day = Temporal.PlainDate.from("2026-11-15");
 const LIMA = "America/Lima"; // UTC-5, no DST.
@@ -314,5 +314,58 @@ describe("layoutDay", () => {
         2,
       ],
     });
+  });
+});
+
+describe("layoutDay's quick pre-filter", () => {
+  it("keeps instants with more than millisecond precision and items touching the day by less than a millisecond", () => {
+    const segments = layoutDay(
+      [
+        {
+          endAt: "2026-11-15T05:00:00.000000001Z", // 00:00 in Lima plus one nanosecond
+          id: "edge",
+          startAt: "2026-11-14T20:00:00.5Z",
+        },
+        {
+          endAt: "2026-11-15T15:30:00.123456789Z",
+          id: "precise",
+          startAt: "2026-11-15T15:00:00.123456789Z",
+        },
+      ],
+      day,
+      LIMA,
+    );
+    expect(segments.map((segment) => segment.item.id).sort()).toEqual([
+      "edge",
+      "precise",
+    ]);
+  });
+
+  it("still leaves out items that end exactly when the day starts", () => {
+    expect(
+      layoutDay(
+        [
+          {
+            endAt: "2026-11-15T05:00:00Z",
+            id: "yesterday",
+            startAt: "2026-11-15T03:00:00Z",
+          },
+        ],
+        day,
+        LIMA,
+      ),
+    ).toEqual([]);
+  });
+});
+
+describe("instantMs", () => {
+  it("reads ISO instants with any offset or precision", () => {
+    expect(instantMs("2026-11-15T10:00:00Z")).toBe(Date.UTC(2026, 10, 15, 10));
+    expect(instantMs("2026-11-15T05:00:00-05:00")).toBe(
+      Date.UTC(2026, 10, 15, 10),
+    );
+    expect(instantMs("2026-11-15T10:00:00.123456789Z")).toBe(
+      Date.UTC(2026, 10, 15, 10, 0, 0, 123),
+    );
   });
 });

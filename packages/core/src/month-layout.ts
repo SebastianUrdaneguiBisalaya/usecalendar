@@ -1,4 +1,5 @@
 import { startOfWeek } from "./calendar-view.js";
+import { instantMs } from "./day-layout.js";
 import type { CalendarEvent } from "./event.js";
 import type { WeekStart } from "./options.js";
 
@@ -146,7 +147,31 @@ export const layoutWeek = <T extends DatedItem>(
   days: readonly Temporal.PlainDate[],
   timeZone: string,
 ): WeekSegment<T>[] => {
+  const rowFirst = days[0];
+  const rowLast = days.at(-1);
+  if (rowFirst === undefined || rowLast === undefined) return [];
+  // Rule out items far from the row with plain numbers before the (much slower) Temporal conversions. All-day items
+  // are read in their own zone, up to a day away from `timeZone`, so the window has two days of slack each side.
+  const windowFirst = rowFirst
+    .subtract({
+      days: 2,
+    })
+    .toZonedDateTime({
+      timeZone,
+    }).epochMilliseconds;
+  const windowLast = rowLast
+    .add({
+      days: 3,
+    })
+    .toZonedDateTime({
+      timeZone,
+    }).epochMilliseconds;
   const placed = items.flatMap((item) => {
+    if (
+      instantMs(item.endAt) < windowFirst ||
+      instantMs(item.startAt) > windowLast
+    )
+      return [];
     const { first, last } = itemDays(item, timeZone);
     const columns = days.flatMap((day, index) =>
       Temporal.PlainDate.compare(day, first) >= 0 &&
@@ -180,7 +205,7 @@ export const layoutWeek = <T extends DatedItem>(
       a.firstColumn - b.firstColumn ||
       b.span - a.span ||
       Number(b.item.allDay === true) - Number(a.item.allDay === true) ||
-      Date.parse(a.item.startAt) - Date.parse(b.item.startAt) ||
+      instantMs(a.item.startAt) - instantMs(b.item.startAt) ||
       a.item.id.localeCompare(b.item.id),
   );
 

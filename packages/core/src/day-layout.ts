@@ -27,6 +27,15 @@ const minuteOfDay = (time: Temporal.ZonedDateTime): number =>
   time.hour * 60 + time.minute;
 
 /**
+ * Epoch milliseconds of an ISO 8601 instant, cheaply: `Date.parse` handles the usual forms, and anything it can't
+ * read (e.g. more than millisecond precision in some engines) falls back to `Temporal`.
+ */
+export const instantMs = (iso: string): number => {
+  const ms = Date.parse(iso);
+  return Number.isNaN(ms) ? Temporal.Instant.from(iso).epochMilliseconds : ms;
+};
+
+/**
  * Lays out the items that overlap `day` in `timeZone`, clipped to the day.
  *
  * Items that overlap in time share the width side by side, like Google Calendar: each group of transitively
@@ -53,7 +62,13 @@ export const layoutDay = <T extends TimedItem>(
       timeZone,
     });
 
+  // Most items aren't on this day: rule them out with plain numbers before the (much slower) Temporal conversions.
+  // `Date.parse` drops sub-millisecond digits, so keep a millisecond of slack; the exact check follows.
+  const firstMs = dayStart.epochMilliseconds - 1;
+  const lastMs = dayEnd.epochMilliseconds + 1;
   const segments = items.flatMap((item) => {
+    if (instantMs(item.endAt) < firstMs || instantMs(item.startAt) > lastMs)
+      return [];
     const start = Temporal.Instant.from(item.startAt).toZonedDateTimeISO(
       timeZone,
     );
