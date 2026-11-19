@@ -332,7 +332,7 @@ const strip = useMiniCalendar({ days: 5, align: "center", onValueChange: setDay 
 | `CalendarProvider` / `useCalendarContext` | Shares a `CalendarState` with the views and toolbar. `useCalendarContext` throws `CalendarContextError` outside a provider. |
 | `MonthView` | The month grid. Props: `events`, `onEventClick`, `onDayClick`, `renderEvent`, `renderEventWrapper`, `renderMorePopover`, `className`, `classNames`. |
 | `TimeGridView` | The week and day grid (it draws `calendar.days`). It takes the event, editing and rendering props listed under [`<Calendar>`](#events-and-editing). |
-| `CalendarToolbar` | Today, previous and next buttons, title and view switcher. Props: `views`, `className`, `classNames`. |
+| `CalendarToolbar` | Today, previous and next buttons, title and view switcher. Props: `views`, `className`, `classNames`. It adapts to its own width: under 36rem the view switcher moves to a second row and the title truncates. |
 | `EventChip` / `EventBlock` | The default event look (month and all-day bars, time-grid blocks). Spread the props a render prop receives into them to keep the defaults. |
 | `CalendarLocaleProvider` / `useCalendarLocale` | Shares `locale`, `timeFormat`, `labels` and `formatters`. |
 | `CalendarKeymapProvider` / `useCalendarKeymap` | Shares the shortcut configuration with the grids and the mini calendar. |
@@ -482,6 +482,40 @@ function Planner({ events }) {
 ```
 
 The strip also uses the calendar's `weekStart`, `showWeekends` and `timeZone` unless you pass its own.
+
+### Small screens
+
+The calendar never changes its view on its own: the view belongs to your app. The toolbar adapts to its own width (the view switcher moves to a second row under 36rem), and every view works at phone widths, but seven day columns are tight on a phone. To open the day view on small screens, pick the view after mounting, so server rendering and hydration agree:
+
+```tsx
+import type { CalendarEvent, CalendarView } from "@usecalendar/core";
+import { Calendar, CalendarToolbar } from "@usecalendar/react";
+import { useEffect, useState } from "react";
+
+function ResponsiveCalendar({ events }: { events: CalendarEvent[] }) {
+  const [view, setView] = useState<CalendarView>("week");
+  const [isSmall, setIsSmall] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 640px)");
+    setIsSmall(query.matches);
+    if (query.matches) setView("day");
+    const onChange = () => setIsSmall(query.matches);
+    query.addEventListener("change", onChange);
+    return () => query.removeEventListener("change", onChange);
+  }, []);
+
+  return (
+    <Calendar
+      events={events}
+      onViewChange={setView}
+      // Optional: offer only the views that read well on a phone.
+      toolbar={() => <CalendarToolbar views={isSmall ? ["day", "month"] : ["day", "week", "month"]} />}
+      view={view}
+    />
+  );
+}
+```
 
 ### Event dots in the mini calendar
 
