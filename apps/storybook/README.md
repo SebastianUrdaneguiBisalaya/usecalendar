@@ -32,6 +32,7 @@ Lint and formatting come from the root `pnpm run lint` (Biome).
 | Locale | The `locale` prop (`en-US` by default, `es-PE`, `de-DE`, …). |
 | Time zone | The `timeZone` prop. The demo events are authored in the browser's zone, so other zones show them shifted. |
 | Week start | The `weekStart` prop. |
+| Frame meter | An overlay with FPS, the worst frame of the last second, and long animation frames, for checking frame rates by hand while you drag, resize or scroll. |
 | Stylesheet | **Tailwind v4 app**: `@import "tailwindcss"` plus the source `theme.css`. **No Tailwind**: the same input as the prebuilt `styles.css` (no preflight). Classes written only in stories exist only in the Tailwind mode, as in a real app. |
 
 Toolbar values apply to a story's component when its `parameters.calendarGlobals` lists them, unless the story sets that prop itself. Every story also gets the locale through a `CalendarLocaleProvider`.
@@ -43,6 +44,7 @@ The **Actions** panel logs every callback (`onEventChange`, `onSlotClick`, `onRa
 - `Calendar/Calendar`: month, week and day views; read-only, `isEventEditable`, `draftRange`, `selectedEventId`, custom toolbar, `renderEvent`, `renderEventWrapper`, `hotkeys` overrides, and driving it from `useCalendar`.
 - `Calendar/Edge cases`: overlapping, all-day and multi-day events, "+N more", tentative and past events, the current-time line, events crossing midnight, no weekends, week numbers, `slotMinutes`/`snapMinutes`, a mobile viewport, no events.
 - `MiniCalendar`: controlled and uncontrolled, `days` (number and `"auto"`), `align`, `step`, `minDate`/`maxDate`, `isDayDisabled`, `renderDay` with event dots, and synced with `<Calendar>`.
+- `Calendar/Performance`: stress stories with the frame meter on: a week with 500 events, a day with heavy overlaps, a month with 2000 events, 300 multi-day bars, and the 500-event week on a phone.
 - `Building blocks`: `EventChip` and `EventBlock` looks, `CalendarToolbar`, and theming (`--uc-*` tokens, shadcn tokens, `classNames`).
 
 The calendar stories keep their events in React state (`src/support/demo-calendar.tsx`), so creating, moving, resizing and deleting (with the `deleteEvent` shortcut) really work.

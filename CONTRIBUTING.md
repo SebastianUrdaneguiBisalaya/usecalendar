@@ -46,6 +46,7 @@ Run them from the repository root. Each one runs in every package.
 | `pnpm run typecheck` | `tsc --noEmit` in every package. |
 | `pnpm run lint` | Biome lint and format check. `pnpm run lint:fix` applies fixes. |
 | `pnpm run test` | Vitest in every package. `pnpm run test:watch` for watch mode. |
+| `pnpm run bench` | Benchmarks of core's layout and drag math (`vitest bench`). Not part of `test`; see [Performance](#performance). |
 | `pnpm run storybook` | Starts the Storybook at http://localhost:6006 to review the components by hand (see below). |
 | `pnpm run smoke:pack` | Packs and installs both packages in a throwaway project and checks them (see below). Needs a build. |
 | `pnpm changeset` | Adds a changeset describing your change for the next release. |
@@ -67,6 +68,17 @@ Git hooks run some of this for you. **pre-commit** runs Biome on the staged file
 `pnpm run storybook` starts the private Storybook in `apps/storybook` on port 6006. Stories import the packages' source, so edits hot-reload without a build. Use the toolbar to switch the theme (system, light, dark), `locale`, `timeZone`, `weekStart`, and the stylesheet: `theme.css` in a Tailwind v4 app, or the prebuilt `styles.css` of an app without Tailwind. The calendar stories keep events in state, so creating, moving and resizing really work, and every callback shows in the Actions panel. The Accessibility panel runs axe on demand.
 
 Storybook is for manual review only. It is never published or deployed, and it has no test addons (no `@storybook/addon-vitest`, Playwright, Chromatic or screenshots). See [apps/storybook/README.md](./apps/storybook/README.md).
+
+## Performance
+
+At 60 Hz a frame has about 16.7 ms, roughly 10 ms of it for JavaScript (about 8 ms in total at 120 Hz). Frame rate matters during continuous interactions: dragging, resizing, scrolling. Clicks and key presses are about responsiveness: the next paint within 200 ms, and no task over 50 ms.
+
+What is automated, without a browser:
+
+- **Benchmarks** (`pnpm run bench`, in `packages/core/bench/`): the week and month layouts with 50, 500 and 2000 events, one drag step, and keyboard focus moves. Use them to compare a change against `main` on the same machine. They run on the Temporal polyfill, so read them as relative numbers.
+- **Budget tests** in the normal test suite. `packages/core/tests/performance.test.ts` times the same scenarios (median of several runs). `packages/react/tests/performance.dom.test.tsx` times React commits with `<Profiler>` in jsdom: mounting a 500-event week, moving one event, going to the next week, and mounting a 2000-event month. Budgets sit well above the measured times (noted in each test), so they fail only on a clear regression. If a deliberate change needs a higher budget, say why in the pull request.
+
+What is checked by hand: real frame rates. They need a real browser, which the test suite doesn't use. In Storybook, open **Calendar/Performance** (the frame meter is on there, or turn it on for any story from the toolbar), then drag, resize and scroll while watching FPS, the worst frame and long frames. To find the cause of a slow frame, record the interaction in the Chrome DevTools Performance panel or the React DevTools Profiler.
 
 ## Checking the packed packages
 
