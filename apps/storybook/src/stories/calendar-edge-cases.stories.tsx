@@ -1,4 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { CalendarView } from "@usecalendar/core";
+import { CalendarToolbar } from "@usecalendar/react";
+import { type ComponentProps, useEffect, useState } from "react";
 import { DemoCalendar } from "../support/demo-calendar";
 import {
   allDay,
@@ -254,31 +257,48 @@ export const CoarseSlots: Story = {
   },
 };
 
-/** A narrow (mobile) viewport. Use the viewport toolbar to try other widths. */
+const mobile = {
+  viewport: {
+    isRotated: false,
+    value: "mobile1",
+  },
+};
+
+/**
+ * A phone, the way the README's "Small screens" recipe sets it up: the app picks the day view after mounting and
+ * offers only day and month. The toolbar puts the view switcher on its own row.
+ */
 export const Mobile: Story = {
   args: {
     height: 640,
   },
-  globals: {
-    viewport: {
-      isRotated: false,
-      value: "mobile1",
-    },
-  },
+  globals: mobile,
+  render: (args) => <ResponsiveDemo {...args} />,
 };
 
-/** The month view on a narrow (mobile) viewport. */
+/** The week view on a phone: seven narrow columns, and the toolbar on two rows. */
+export const MobileWeek: Story = {
+  args: {
+    height: 640,
+  },
+  globals: mobile,
+};
+
+/** The month view on a phone. */
 export const MobileMonth: Story = {
   args: {
     defaultView: "month",
     height: 640,
   },
-  globals: {
-    viewport: {
-      isRotated: false,
-      value: "mobile1",
-    },
-  },
+  globals: mobile,
+};
+
+/**
+ * The README's "Small screens" recipe: day view and only day/month under 640px, week view otherwise. Resize the
+ * canvas or switch the viewport (reload the story to re-run the initial pick).
+ */
+export const ResponsiveRecipe: Story = {
+  render: (args) => <ResponsiveDemo {...args} />,
 };
 
 /** No events at all. */
@@ -287,3 +307,43 @@ export const Empty: Story = {
     initialEvents: [],
   },
 };
+
+/** The README's "Small screens" recipe around `DemoCalendar`. */
+function ResponsiveDemo(props: ComponentProps<typeof DemoCalendar>) {
+  const [view, setView] = useState<CalendarView>("week");
+  const [isSmall, setIsSmall] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 640px)");
+    setIsSmall(query.matches);
+    if (query.matches) setView("day");
+    const onChange = () => setIsSmall(query.matches);
+    query.addEventListener("change", onChange);
+    return () => query.removeEventListener("change", onChange);
+  }, []);
+
+  return (
+    <DemoCalendar
+      {...props}
+      defaultView={undefined}
+      onViewChange={setView}
+      toolbar={() => (
+        <CalendarToolbar
+          views={
+            isSmall
+              ? [
+                  "day",
+                  "month",
+                ]
+              : [
+                  "day",
+                  "week",
+                  "month",
+                ]
+          }
+        />
+      )}
+      view={view}
+    />
+  );
+}

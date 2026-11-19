@@ -45,6 +45,9 @@ const BUTTON =
  * The calendar's header: today, previous and next buttons, the shown month and year, and a view switcher. Labels
  * come from `labels` and the title from `formatters.monthYear`.
  *
+ * It responds to its own width (a CSS size container), not the viewport: when it's narrower than 36rem the view
+ * switcher moves to a second row with equal-width buttons, and the title truncates instead of pushing the buttons.
+ *
  * `<Calendar>` renders it unless `toolbar={false}`; render it yourself anywhere inside a `CalendarProvider` (or as
  * `<Calendar toolbar={…}>`) to place or restyle it.
  *
@@ -63,15 +66,21 @@ export function CalendarToolbar({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-x-3 gap-y-2 border-uc-border border-b bg-uc-background px-3 py-2 text-uc-foreground",
+        // A size container, so the layout follows the toolbar's own width (a narrow sidebar too), not the viewport.
+        // `box-border` keeps `w-full` plus padding inside the parent without Tailwind's preflight.
+        "@container box-border flex w-full flex-wrap items-center gap-x-3 gap-y-2 border-uc-border border-b bg-uc-background px-3 py-2 text-uc-foreground",
         classNames?.root,
         className,
       )}
     >
-      <div className="flex min-w-0 flex-1 items-center gap-2">
+      {/* Sized by its content (not `flex-1`'s zero basis), so the view switcher wraps instead of overlapping it. */}
+      <div className="flex min-w-0 flex-[1_1_auto] items-center gap-2">
         <nav
           aria-label={labels.navigation}
-          className={cn("flex items-center gap-1", classNames?.navigation)}
+          className={cn(
+            "flex shrink-0 items-center gap-1",
+            classNames?.navigation,
+          )}
         >
           <button
             className={cn(
@@ -106,7 +115,7 @@ export function CalendarToolbar({
         <div
           aria-live="polite"
           className={cn(
-            "min-w-0 truncate font-semibold text-xl first-letter:uppercase",
+            "min-w-0 truncate font-semibold text-xl first-letter:uppercase @max-md:text-lg",
             classNames?.title,
           )}
         >
@@ -123,7 +132,8 @@ export function CalendarToolbar({
         <div
           aria-label={labels.viewSwitcher}
           className={cn(
-            "inline-flex items-center rounded-uc border border-uc-border border-solid p-0.5",
+            // Under 36rem it takes its own row, with equal-width buttons.
+            "box-border inline-flex items-center rounded-uc border border-uc-border border-solid p-0.5 @max-xl:w-full",
             classNames?.views,
           )}
           role="group"
@@ -133,7 +143,7 @@ export function CalendarToolbar({
               aria-pressed={option === view}
               className={cn(
                 BUTTON,
-                "h-7 px-3 aria-pressed:bg-uc-accent aria-pressed:text-uc-accent-foreground",
+                "h-7 px-3 aria-pressed:bg-uc-accent aria-pressed:text-uc-accent-foreground @max-xl:flex-1",
                 classNames?.view,
               )}
               key={option}

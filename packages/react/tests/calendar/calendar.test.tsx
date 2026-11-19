@@ -177,4 +177,20 @@ describe("CalendarToolbar", () => {
       'role="group"',
     );
   });
+
+  it("wraps by its own width instead of letting the buttons overlap the switcher", () => {
+    const html = render();
+    // The toolbar is a size container, so narrow calendars (not only narrow viewports) get the compact layout.
+    expect(html).toMatch(/class="@container [^"]*w-full/);
+    // The navigation never shrinks; only the title truncates.
+    expect(html).toMatch(
+      /aria-label="Calendar navigation" class="[^"]*shrink-0/,
+    );
+    // The left group is sized by its content (a zero basis would never wrap), and the switcher takes its own
+    // full-width row when the toolbar is narrow.
+    expect(html).toContain("flex-[1_1_auto]");
+    expect(html).not.toMatch(/class="flex min-w-0 flex-1 items-center gap-2"/);
+    expect(html).toMatch(/class="[^"]*@max-xl:w-full[^"]*" role="group"/);
+    expect(html).toMatch(/aria-pressed="true" class="[^"]*@max-xl:flex-1/);
+  });
 });

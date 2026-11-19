@@ -73,3 +73,42 @@ export const ClassNames: Story = {
     },
   },
 };
+
+const WIDTHS = [
+  280,
+  360,
+  480,
+  640,
+] as const;
+
+/**
+ * The toolbar at several widths at once. It follows its own width (a size container), so it wraps the same in a
+ * narrow sidebar as on a phone: under 36rem the view switcher takes a second row and the title truncates. Try the
+ * `es-PE` and `de-DE` locales for longer labels.
+ */
+export const NarrowWidths: Story = {
+  decorators: [
+    (Story) => (
+      <div
+        style={{
+          display: "grid",
+          gap: 16,
+          padding: 16,
+        }}
+      >
+        {WIDTHS.map((width) => (
+          <div
+            key={width}
+            style={{
+              outline: "1px dashed var(--uc-border)",
+              width,
+            }}
+          >
+            <small>{width}px</small>
+            <Story />
+          </div>
+        ))}
+      </div>
+    ),
+  ],
+};
