@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   boxStyle,
+  eventSizing,
   GUTTER_REM,
   gridStyle,
   hourHeightLength,
+  hourHeightRem,
 } from "../../src/time-grid/grid-geometry.js";
 
 describe("gridStyle", () => {
@@ -45,6 +47,48 @@ describe("hour height", () => {
     expect(gridStyle(1, 3, 15).gridTemplateRows).toBe(
       "var(--uc-time-grid-header) repeat(96, calc(var(--uc-time-grid-hour) * 0.25))",
     );
+  });
+});
+
+describe("hourHeightRem", () => {
+  it("knows numbers and rem strings without the DOM", () => {
+    expect(hourHeightRem(3)).toBe(3);
+    expect(hourHeightRem("4rem")).toBe(4);
+    expect(hourHeightRem(" .5rem ")).toBe(0.5);
+  });
+
+  it("leaves other lengths and invalid values to be measured", () => {
+    expect(hourHeightRem("64px")).toBeNull();
+    expect(hourHeightRem("5vh")).toBeNull();
+    expect(hourHeightRem("calc(2rem + 8px)")).toBeNull();
+    expect(hourHeightRem(0)).toBeNull();
+    expect(hourHeightRem(-2)).toBeNull();
+    expect(hourHeightRem(Number.NaN)).toBeNull();
+  });
+});
+
+describe("eventSizing", () => {
+  it("keeps the original rules at the default 3rem per hour", () => {
+    expect(eventSizing(3)).toEqual({
+      compactMinutes: 60,
+      minMinutes: 15,
+    });
+  });
+
+  it("draws short events longer on a dense grid and in two lines sooner on a tall one", () => {
+    expect(eventSizing(1.5)).toEqual({
+      compactMinutes: 120,
+      minMinutes: 30,
+    });
+    expect(eventSizing(6)).toEqual({
+      compactMinutes: 30,
+      minMinutes: 8,
+    });
+  });
+
+  it("rounds the minimum up to whole minutes and falls back on bad heights", () => {
+    expect(eventSizing(1.75).minMinutes).toBe(26);
+    expect(eventSizing(0)).toEqual(eventSizing(3));
   });
 });
 

@@ -54,11 +54,12 @@ import {
   ALL_DAY_LANE_REM,
   attributeValue,
   boxStyle,
-  COMPACT_EVENT_MINUTES,
   DAY_HEADER_REM,
+  type EventSizing,
+  eventSizing,
   gridStyle,
   HOUR_HEIGHT_REM,
-  MIN_EVENT_MINUTES,
+  hourHeightRem,
   slotsPerDay,
 } from "./grid-geometry.js";
 import { useTimeGridDrag } from "./use-time-grid-drag.js";
@@ -339,6 +340,35 @@ export function TimeGridView<TData = unknown>({
     weekStart,
   ]);
   const ready = days.length > 0;
+
+  // Short events are sized in rem; the layout needs that in minutes, so it needs the hour height in rem. Numbers and
+  // rem strings give it directly (server rendering included); other CSS lengths are measured once mounted, and use
+  // the default until then.
+  const knownHourRem = hourHeightRem(hourHeight);
+  const [measuredHourRem, setMeasuredHourRem] = useState<number | null>(null);
+  useEffect(() => {
+    // Runs again whenever `hourHeight` changes, to measure the new length.
+    if (!ready || hourHeightRem(hourHeight) !== null) return;
+    const slot =
+      scrollRef.current?.querySelector<HTMLElement>('[role="gridcell"]');
+    const rootPx = Number.parseFloat(
+      getComputedStyle(document.documentElement).fontSize,
+    );
+    const slotPx = slot?.getBoundingClientRect().height ?? 0;
+    if (slotPx > 0 && rootPx > 0)
+      setMeasuredHourRem(((slotPx / rootPx) * 60) / slotMinutes);
+  }, [
+    hourHeight,
+    ready,
+    slotMinutes,
+  ]);
+  const hourRem = knownHourRem ?? measuredHourRem ?? HOUR_HEIGHT_REM;
+  const sizing = useMemo(
+    () => eventSizing(hourRem),
+    [
+      hourRem,
+    ],
+  );
   const canEdit = (event: CalendarEvent<TData>) =>
     editable &&
     onEventChange !== undefined &&
@@ -389,10 +419,11 @@ export function TimeGridView<TData = unknown>({
   ]);
 
   const layout = useMemo(
-    () => layoutGrid(events, days, timeZone, slotMinutes),
+    () => layoutGrid(events, days, timeZone, slotMinutes, sizing.minMinutes),
     [
       days,
       events,
+      sizing.minMinutes,
       slotMinutes,
       timeZone,
     ],
@@ -646,7 +677,7 @@ export function TimeGridView<TData = unknown>({
             ],
             day,
             timeZone,
-            MIN_EVENT_MINUTES,
+            sizing.minMinutes,
           ).map((segment) => ({
             dayIndex,
             segment,
@@ -863,6 +894,7 @@ export function TimeGridView<TData = unknown>({
                               refocus={(node) => refocus(node, segment.item.id)}
                               renderEvent={renderEvent}
                               segment={segment}
+                              sizing={sizing}
                               time={eventTimes.get(segment.item.id) ?? ""}
                             />,
                             segment.item,
@@ -890,7 +922,7 @@ export function TimeGridView<TData = unknown>({
               segment.startMinute,
               Math.max(
                 segment.endMinute,
-                segment.startMinute + MIN_EVENT_MINUTES,
+                segment.startMinute + sizing.minMinutes,
               ),
             )}
           />
@@ -930,11 +962,12 @@ const layoutGrid = <TData,>(
   days: readonly Temporal.PlainDate[],
   timeZone: string,
   slotMinutes: number,
+  minEventMinutes: number,
 ): GridLayout<TData> => {
   const timed = events.filter((event) => !belongsInAllDayLane(event));
   const segmentsBySlot = new Map<string, DaySegment<CalendarEvent<TData>>[]>();
   const dayEvents = days.map((day, dayIndex) => {
-    const segments = layoutDay(timed, day, timeZone, MIN_EVENT_MINUTES);
+    const segments = layoutDay(timed, day, timeZone, minEventMinutes);
     for (const segment of segments) {
       const key = slotKey(
         dayIndex,
@@ -1053,6 +1086,7 @@ type TimeGridEventProps<TData> = {
   refocus: (node: HTMLButtonElement | null) => void;
   renderEvent: ((block: EventBlockProps<TData>) => ReactNode) | undefined;
   segment: DaySegment<CalendarEvent<TData>>;
+  sizing: EventSizing;
   time: string;
 };
 
@@ -1076,6 +1110,7 @@ function TimeGridEvent<TData>({
   refocus,
   renderEvent,
   segment,
+  sizing,
   time,
 }: TimeGridEventProps<TData>) {
   const {
@@ -1087,9 +1122,9 @@ function TimeGridEvent<TData>({
     item: event,
     startMinute,
   } = segment;
-  const drawnEnd = Math.max(endMinute, startMinute + MIN_EVENT_MINUTES);
+  const drawnEnd = Math.max(endMinute, startMinute + sizing.minMinutes);
   const block: EventBlockProps<TData> = {
-    compact: drawnEnd - startMinute < COMPACT_EVENT_MINUTES,
+    compact: drawnEnd - startMinute < sizing.compactMinutes,
     continuesAfter,
     continuesBefore,
     event,
