@@ -633,7 +633,7 @@ At the edge of the month grid, the arrow keys are left to the global shortcuts, 
 
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup, scripts and the pull request checklist. Please report security issues as described in [SECURITY.md](./SECURITY.md). Release notes live in [CHANGELOG.md](./CHANGELOG.md).
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup, scripts and the pull request checklist. Please report security issues as described in [SECURITY.md](./SECURITY.md). Release notes live in each package's changelog ([core](./packages/core/CHANGELOG.md), [react](./packages/react/CHANGELOG.md)).
 
 ## License
 

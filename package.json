@@ -21,7 +21,10 @@
     "format": "biome format --write .",
     "test": "pnpm -r run test",
     "test:watch": "pnpm -r --parallel run test:watch",
-    "prepare": "husky"
+    "prepare": "husky",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "smoke:pack": "node scripts/smoke-pack.mjs"
   },
   "devEngines": {
     "packageManager": {
@@ -34,6 +37,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.11",
+    "@changesets/cli": "3.0.3",
     "husky": "9.1.7"
   }
 }
