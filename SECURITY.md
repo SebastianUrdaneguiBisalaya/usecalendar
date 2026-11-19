@@ -6,7 +6,7 @@ Email **sebasurdanegui@gmail.com** only. Do not open public GitHub issues for se
 
 Please include:
 
-- The affected package (`@usesounds/core` or `@usesounds/react`) and version
+- The affected package (`@usecalendar/core` or `@usecalendar/react`) and version
 - Steps to reproduce (a minimal snippet is ideal)
 - Impact (what an attacker could do)
 - Whether the issue is already public
@@ -22,21 +22,24 @@ We will acknowledge your report and work on a fix. Please do not file a public i
 
 This policy covers the npm packages published from **this repository**:
 
-- `@usesounds/core`
-- `@usesounds/react`
+- `@usecalendar/core`
+- `@usecalendar/react` (including the `@usecalendar/react/mini` entry and its stylesheets)
+
+usecalendar is a client-side UI library. It renders the events an app passes in and reports user actions through callbacks. It holds no credentials, and it never fetches, stores or sends calendar data anywhere.
 
 Examples of in-scope issues:
 
-- Code in the packages that runs unexpected script or touches the DOM beyond the documented `data-sound` listener
-- Network requests made by the library other than fetching sample URLs the consumer provides
-- A compromised or tampered published package (e.g. contents that don't match this repository)
+- Event content (titles, labels, formatter output) rendered as HTML or script instead of text, leading to cross-site scripting
+- Network requests, storage access (cookies, `localStorage`, IndexedDB) or logging of event data made by the library
+- Code that crashes or misbehaves during server rendering in a way that exposes data from another request
+- A compromised or tampered published package (e.g. contents that don't match this repository or its npm provenance)
 
 Out of scope:
 
-- Sample URLs, audio files, or Content Security Policy (`connect-src`) configured by the consuming app
-- Browser or Electron bugs in the Web Audio API itself
-- Browser autoplay policies preventing sounds from playing (this is expected behavior, not a vulnerability)
-- Vulnerabilities in the consuming app's own dependencies (both packages have zero runtime dependencies; `react` is a peer dependency)
+- Content the consuming app renders itself through render props (`renderEvent`, `renderEventWrapper`, `renderDay`, …) or custom `labels` and `formatters`
+- How the consuming app loads, authorizes, validates or saves events (the library only proposes changes through callbacks)
+- The app's Content Security Policy, styling, or its own dependencies (the runtime dependencies are `clsx` and `tailwind-merge`; `react` and `react-dom` are peer dependencies)
+- Bugs in browsers, React, or the `Temporal` implementation or polyfill the app provides
 
 ## Supported versions
 
