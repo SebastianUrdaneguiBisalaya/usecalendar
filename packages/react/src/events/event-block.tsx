@@ -42,6 +42,7 @@ export type EventBlockProps<TData = unknown> = {
    * @defaultValue false
    */
   continuesBefore?: boolean | undefined;
+  /** The event to draw. */
   event: CalendarEvent<TData>;
   /** How the event reads at a glance (past, tentative); see `eventLook`. */
   look: EventLook;
