@@ -257,6 +257,21 @@ export const CoarseSlots: Story = {
   },
 };
 
+/** `hourHeight={1.75}`: a dense grid that fits a working day on screen. */
+export const DenseHours: Story = {
+  args: {
+    hourHeight: 1.75,
+  },
+};
+
+/** `hourHeight="96px"` with `slotMinutes={15}`: a roomy grid for reading short events. */
+export const TallHours: Story = {
+  args: {
+    hourHeight: "96px",
+    slotMinutes: 15,
+  },
+};
+
 const mobile = {
   viewport: {
     isRotated: false,

@@ -2,8 +2,8 @@ import { MINUTES_PER_DAY } from "@usecalendar/core";
 import type { CSSProperties } from "react";
 
 // Sizes in rem so the grid follows the user's font size. Every position below derives from these.
-/** Height of one hour; slots split it evenly, so `slotMinutes` changes the rows but not the scale. */
-const HOUR_REM = 3;
+/** Default height of one hour; slots split it evenly, so `slotMinutes` changes the rows but not the scale. */
+export const HOUR_HEIGHT_REM = 3;
 /** Day headers; the all-day lane adds its rows below them. */
 export const DAY_HEADER_REM = 3;
 /** One row of the all-day lane. */
@@ -16,10 +16,17 @@ export const MIN_EVENT_MINUTES = 15;
 /** Events shorter than this are drawn on one line (title and time side by side). */
 export const COMPACT_EVENT_MINUTES = 60;
 
-const minutesToRem = (minutes: number) => (minutes / 60) * HOUR_REM;
-
-// The header height varies with the all-day lane; children read it from this variable instead of a prop.
+// The header height varies with the all-day lane, and the hour height with the `hourHeight` prop; children read
+// both from these variables, set once on the grid, instead of props.
 const HEADER = "var(--uc-time-grid-header)";
+const HOUR = "var(--uc-time-grid-hour)";
+
+/** CSS length of `minutes` on the grid's scale. */
+const minutesToLength = (minutes: number) => `${HOUR} * ${minutes / 60}`;
+
+/** An `hourHeight` prop as a CSS length: numbers are rem, strings are used as they are (`"64px"`). */
+export const hourHeightLength = (hourHeight: number | string): string =>
+  typeof hourHeight === "number" ? `${hourHeight}rem` : hourHeight;
 
 /** Rows (slots) in one day. */
 export const slotsPerDay = (slotMinutes: number): number =>
@@ -37,12 +44,14 @@ export const gridStyle = (
   dayCount: number,
   headerRem: number,
   slotMinutes: number,
+  hourHeight: number | string = HOUR_HEIGHT_REM,
 ): CSSProperties => {
   const minDayRem = dayCount > 1 ? MIN_DAY_REM : 0;
   return {
     "--uc-time-grid-header": `${headerRem}rem`,
+    "--uc-time-grid-hour": hourHeightLength(hourHeight),
     gridTemplateColumns: `${GUTTER_REM}rem repeat(${dayCount}, minmax(${minDayRem}rem, 1fr))`,
-    gridTemplateRows: `${HEADER} repeat(${slotsPerDay(slotMinutes)}, ${minutesToRem(slotMinutes)}rem)`,
+    gridTemplateRows: `${HEADER} repeat(${slotsPerDay(slotMinutes)}, calc(${minutesToLength(slotMinutes)}))`,
     minWidth: `${GUTTER_REM + dayCount * minDayRem}rem`,
   } as CSSProperties;
 };
@@ -58,9 +67,9 @@ export const boxStyle = (
 ): Pick<CSSProperties, "height" | "left" | "top" | "width"> => {
   const dayWidth = `(100% - ${GUTTER_REM}rem) / ${dayCount}`;
   return {
-    height: `${minutesToRem(endMinute - startMinute)}rem`,
+    height: `calc(${minutesToLength(endMinute - startMinute)})`,
     left: `calc(${GUTTER_REM}rem + ${dayWidth} * ${dayIndex + column / columns})`,
-    top: `calc(${HEADER} + ${minutesToRem(startMinute)}rem)`,
+    top: `calc(${HEADER} + ${minutesToLength(startMinute)})`,
     width: `calc(${dayWidth} / ${columns})`,
   };
 };

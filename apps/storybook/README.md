@@ -42,7 +42,7 @@ The **Actions** panel logs every callback (`onEventChange`, `onSlotClick`, `onRa
 ## Stories
 
 - `Calendar/Calendar`: month, week and day views; read-only, `isEventEditable`, `draftRange`, `selectedEventId`, custom toolbar, `renderEvent`, `renderEventWrapper`, `hotkeys` overrides, and driving it from `useCalendar`.
-- `Calendar/Edge cases`: overlapping, all-day and multi-day events, "+N more", tentative and past events, the current-time line, events crossing midnight, no weekends, week numbers, `slotMinutes`/`snapMinutes`, a mobile viewport, no events.
+- `Calendar/Edge cases`: overlapping, all-day and multi-day events, "+N more", tentative and past events, the current-time line, events crossing midnight, no weekends, week numbers, `slotMinutes`/`snapMinutes`, `hourHeight` (dense and tall hours), a mobile viewport, no events.
 - `MiniCalendar`: controlled and uncontrolled, `days` (number and `"auto"`), `align`, `step`, `minDate`/`maxDate`, `isDayDisabled`, `renderDay` with event dots, and synced with `<Calendar>`.
 - `Calendar/Performance`: stress stories with the frame meter on: a week with 500 events, a day with heavy overlaps, a month with 2000 events, 300 multi-day bars, and the 500-event week on a phone.
 - `Building blocks`: `EventChip` and `EventBlock` looks, `CalendarToolbar`, and theming (`--uc-*` tokens, shadcn tokens, `classNames`).

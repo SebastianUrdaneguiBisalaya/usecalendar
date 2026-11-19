@@ -94,7 +94,21 @@ describe("TimeGridView", () => {
       slotMinutes: 15,
     });
     expect(count(html, 'role="gridcell"')).toBe(7 * 96);
-    expect(html).toContain("repeat(96, 0.75rem)");
+    expect(html).toContain("--uc-time-grid-hour:3rem");
+    expect(html).toContain("repeat(96, calc(var(--uc-time-grid-hour) * 0.25))");
+  });
+
+  it("scales the hour with hourHeight", () => {
+    expect(
+      render({
+        hourHeight: 4,
+      }),
+    ).toContain("--uc-time-grid-hour:4rem");
+    expect(
+      render({
+        hourHeight: "64px",
+      }),
+    ).toContain("--uc-time-grid-hour:64px");
   });
 
   it("places timed events by time, side by side when they overlap", () => {
@@ -106,9 +120,11 @@ describe("TimeGridView", () => {
         }),
       ],
     });
-    // Wednesday is the third column; 9:00 is 27rem down.
-    expect(html).toContain("top:calc(var(--uc-time-grid-header) + 27rem)");
-    expect(html).toContain("height:3rem");
+    // Wednesday is the third column; 9:00 is nine hours down.
+    expect(html).toContain(
+      "top:calc(var(--uc-time-grid-header) + var(--uc-time-grid-hour) * 9)",
+    );
+    expect(html).toContain("height:calc(var(--uc-time-grid-hour) * 1)");
     expect(html).toContain("* 2)");
     expect(html).toContain("* 2.5)");
     expect(html).toContain("width:calc((100% - 4rem) / 7 / 2)");
