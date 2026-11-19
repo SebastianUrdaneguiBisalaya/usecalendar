@@ -205,6 +205,117 @@ export const CALENDAR_KEYMAP: Readonly<
 };
 
 /**
+ * Keys that move focus inside a grid or the mini calendar. They follow the WAI-ARIA grid and listbox patterns, so
+ * unlike {@link CALENDAR_HOTKEY_ACTIONS} they can't be remapped; they're listed so apps can show them.
+ */
+export const CALENDAR_FOCUS_ACTIONS = [
+  "focusUp",
+  "focusDown",
+  "focusLeft",
+  "focusRight",
+  "focusRowStart",
+  "focusRowEnd",
+  "focusFirst",
+  "focusLast",
+  "focusPageUp",
+  "focusPageDown",
+] as const;
+
+/** A fixed focus movement; see {@link CALENDAR_FOCUS_ACTIONS}. */
+export type CalendarFocusAction = (typeof CALENDAR_FOCUS_ACTIONS)[number];
+
+/** One focus movement's keys, listed under the `"focus"` group. */
+export type CalendarFocusKeyDefinition = {
+  group: "focus";
+  /** Key combinations, any of which moves focus; see {@link parseHotkey} for the syntax. */
+  keys: readonly string[];
+};
+
+/**
+ * The fixed focus keys, shaped like {@link CALENDAR_KEYMAP} (`{ [action]: { keys, group } }`) so apps can list
+ * every key the calendar uses in their own hotkey registry, shortcut list or command menu. Read-only: the grids
+ * handle these keys themselves and the `hotkeys` prop doesn't change them.
+ *
+ * Spell them per platform with {@link describeHotkey} (`mod` is ⌘ on macOS, Ctrl elsewhere; the grids accept
+ * either modifier on every platform).
+ *
+ * | Action | Keys | Month view | Week and day views | Mini calendar |
+ * |---|---|---|---|---|
+ * | `focusUp` / `focusDown` | `↑` / `↓` | Same day, previous/next week | Previous/next slot or event | |
+ * | `focusLeft` / `focusRight` | `←` / `→` | Previous/next day | Same slot, previous/next day | Previous/next day |
+ * | `focusRowStart` / `focusRowEnd` | `Home` / `End` | First/last day of the week | First/last day | First/last day shown |
+ * | `focusFirst` / `focusLast` | `Mod+Home` / `Mod+End` | First/last day of the grid | First/last slot of the day | |
+ * | `focusPageUp` / `focusPageDown` | `PageUp` / `PageDown` | | One hour up/down | Previous/next page |
+ *
+ * @example
+ * const everyKey = { ...resolveKeymap(hotkeys), ...CALENDAR_FOCUS_KEYS }; // keys bound + focus keys
+ */
+export const CALENDAR_FOCUS_KEYS: Readonly<
+  Record<CalendarFocusAction, CalendarFocusKeyDefinition>
+> = {
+  focusDown: {
+    group: "focus",
+    keys: [
+      "arrowdown",
+    ],
+  },
+  focusFirst: {
+    group: "focus",
+    keys: [
+      "mod+home",
+    ],
+  },
+  focusLast: {
+    group: "focus",
+    keys: [
+      "mod+end",
+    ],
+  },
+  focusLeft: {
+    group: "focus",
+    keys: [
+      "arrowleft",
+    ],
+  },
+  focusPageDown: {
+    group: "focus",
+    keys: [
+      "pagedown",
+    ],
+  },
+  focusPageUp: {
+    group: "focus",
+    keys: [
+      "pageup",
+    ],
+  },
+  focusRight: {
+    group: "focus",
+    keys: [
+      "arrowright",
+    ],
+  },
+  focusRowEnd: {
+    group: "focus",
+    keys: [
+      "end",
+    ],
+  },
+  focusRowStart: {
+    group: "focus",
+    keys: [
+      "home",
+    ],
+  },
+  focusUp: {
+    group: "focus",
+    keys: [
+      "arrowup",
+    ],
+  },
+};
+
+/**
  * Shortcut configuration: `true` for the defaults, `false` to turn every shortcut off, or per-action overrides
  * (keys replace the defaults, `null` turns that action off).
  *

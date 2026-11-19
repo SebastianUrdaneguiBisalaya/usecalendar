@@ -40,6 +40,8 @@ export {
   SLOT_MINUTES,
 } from "./grid-focus.js";
 export type {
+  CalendarFocusAction,
+  CalendarFocusKeyDefinition,
   CalendarHotkeyAction,
   CalendarHotkeyDefinition,
   CalendarHotkeyGroup,
@@ -52,6 +54,8 @@ export type {
 } from "./hotkeys.js";
 export {
   ariaKeyShortcut,
+  CALENDAR_FOCUS_ACTIONS,
+  CALENDAR_FOCUS_KEYS,
   CALENDAR_HOTKEY_ACTIONS,
   CALENDAR_KEYMAP,
   describeHotkey,
