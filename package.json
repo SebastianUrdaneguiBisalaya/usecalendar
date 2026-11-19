@@ -24,7 +24,8 @@
     "prepare": "husky",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "smoke:pack": "node scripts/smoke-pack.mjs"
+    "smoke:pack": "node scripts/smoke-pack.mjs",
+    "storybook": "pnpm --filter @usecalendar/storybook run storybook"
   },
   "devEngines": {
     "packageManager": {

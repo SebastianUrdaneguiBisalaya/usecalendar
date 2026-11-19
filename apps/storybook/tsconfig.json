@@ -1,0 +1,44 @@
+{
+  // Private Storybook app: the shared base, plus DOM, JSX, Vite's client types and Node types for `.storybook/main.ts`.
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "declaration": false,
+    "declarationMap": false,
+    "jsx": "react-jsx",
+    "lib": [
+      "ES2023",
+      "ESNext.Temporal",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    // Stories type-check against the packages' source, like the Vite aliases in `.storybook/main.ts`.
+    "paths": {
+      "@usecalendar/core": [
+        "../../packages/core/src/index.ts"
+      ],
+      "@usecalendar/react": [
+        "../../packages/react/src/index.ts"
+      ],
+      "@usecalendar/react/mini": [
+        "../../packages/react/src/mini/index.ts"
+      ]
+    },
+    "sourceMap": false,
+    "types": [
+      "node",
+      "vite/client"
+    ]
+  },
+  "exclude": [
+    "node_modules",
+    "storybook-static"
+  ],
+  "extends": "../../tsconfig.base.json",
+  "include": [
+    "src",
+    ".storybook"
+  ]
+}

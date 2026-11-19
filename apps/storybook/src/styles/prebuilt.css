@@ -1,0 +1,5 @@
+/*
+ * An app without Tailwind: the same input `pnpm run build:css` compiles into `@usecalendar/react/styles.css`
+ * (utilities + tokens, no preflight). Classes written only in stories are not generated here, as in a real app.
+ */
+@import "../../../../packages/react/src/styles/index.css";

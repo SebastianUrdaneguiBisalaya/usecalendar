@@ -11,5 +11,9 @@
   "format": false,
   "ignore": [],
   "linked": [],
+  "privatePackages": {
+    "tag": false,
+    "version": false
+  },
   "updateInternalDependencies": "patch"
 }
