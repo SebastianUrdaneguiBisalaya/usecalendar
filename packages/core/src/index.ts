@@ -14,8 +14,13 @@ export type { DaySegment, TimedItem } from "./day-layout.js";
 export { layoutDay, MINUTES_PER_DAY } from "./day-layout.js";
 export type { CalendarEvent, EventStatus } from "./event.js";
 export { EVENT_STATUSES } from "./event.js";
-export type { DayEvents, GridFocus } from "./grid-focus.js";
-export { focusKey, nextFocus, SLOT_MINUTES } from "./grid-focus.js";
+export type { DayEvents, GridFocus, MonthCell } from "./grid-focus.js";
+export {
+  focusKey,
+  nextFocus,
+  nextMonthFocus,
+  SLOT_MINUTES,
+} from "./grid-focus.js";
 export type {
   CalendarHotkeyAction,
   CalendarHotkeyDefinition,

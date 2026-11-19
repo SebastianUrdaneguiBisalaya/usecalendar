@@ -58,6 +58,20 @@
         "package.json",
         "**/package.json"
       ]
+    },
+    {
+      "includes": [
+        "packages/react/src/month/**",
+        "packages/react/src/time-grid/**"
+      ],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "useFocusableInteractive": "off",
+            "useSemanticElements": "off"
+          }
+        }
+      }
     }
   ],
   "vcs": {

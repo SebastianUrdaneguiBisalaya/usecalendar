@@ -110,3 +110,54 @@ export const nextFocus = (
       return null;
   }
 };
+
+/** A day cell in the month grid: `row` is the week index from the top, `column` the shown day index in it. */
+export type MonthCell = {
+  column: number;
+  row: number;
+};
+
+/**
+ * Where keyboard focus moves for a key press in the month grid, or `null` when the key isn't a grid key or focus
+ * is already at the edge (so the key is left to the global shortcuts, e.g. → moves to the next month).
+ *
+ * - `↑`/`↓`: same day in the previous/next week.
+ * - `←`/`→`: previous/next day in the same week.
+ * - `Home`/`End`: first/last day of the week (with Ctrl/⌘: first/last day of the grid).
+ *
+ * @example
+ * nextMonthFocus({ row: 0, column: 3 }, "End", true, 5, 7); // { row: 4, column: 6 }
+ */
+export const nextMonthFocus = (
+  cell: MonthCell,
+  key: string,
+  ctrlKey: boolean,
+  rowCount: number,
+  columnCount: number,
+): MonthCell | null => {
+  const at = (row: number, column: number): MonthCell | null =>
+    row >= 0 && row < rowCount && column >= 0 && column < columnCount
+      ? {
+          column,
+          row,
+        }
+      : null;
+  switch (key) {
+    case "ArrowDown":
+      return at(cell.row + 1, cell.column);
+    case "ArrowUp":
+      return at(cell.row - 1, cell.column);
+    case "ArrowLeft":
+      return at(cell.row, cell.column - 1);
+    case "ArrowRight":
+      return at(cell.row, cell.column + 1);
+    case "Home":
+      return ctrlKey ? at(0, 0) : at(cell.row, 0);
+    case "End":
+      return ctrlKey
+        ? at(rowCount - 1, columnCount - 1)
+        : at(cell.row, columnCount - 1);
+    default:
+      return null;
+  }
+};
