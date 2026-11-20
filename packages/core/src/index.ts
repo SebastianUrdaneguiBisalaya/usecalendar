@@ -91,3 +91,5 @@ export {
   wallTime,
 } from "./reschedule.js";
 export { visibleDayRange, visibleRange } from "./visible-range.js";
+export type { WorkingHours } from "./working-hours.js";
+export { isWorkingTime } from "./working-hours.js";

@@ -84,6 +84,7 @@ export type {
 } from "./month/month-view.js";
 export { MonthView } from "./month/month-view.js";
 export type {
+  TimeGridTimeZone,
   TimeGridViewClassNames,
   TimeGridViewProps,
 } from "./time-grid/time-grid-view.js";

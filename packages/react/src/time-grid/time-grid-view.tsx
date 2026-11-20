@@ -9,6 +9,7 @@ import {
   type GridFocus,
   type GridHotkeyAction,
   isWeekend,
+  isWorkingTime,
   layoutDay,
   layoutWeek,
   moveRange,
@@ -20,6 +21,7 @@ import {
   type TimeRange,
   visibleDays,
   type WeekSegment,
+  type WorkingHours,
   wallTime,
 } from "@usecalendar/core";
 import {
@@ -66,6 +68,7 @@ import {
   DAY_HEADER_REM,
   type EventSizing,
   eventSizing,
+  GUTTER_REM,
   gridStyle,
   HOUR_HEIGHT_REM,
   hourHeightRem,
@@ -150,7 +153,10 @@ export type TimeGridViewClassNames = EventPopoverClassNames & {
   allDayMore?: string | undefined;
   /** The button that collapses or expands the all-day lane. */
   allDayToggle?: string | undefined;
-  /** The empty header cell above the hour labels. */
+  /**
+   * The header cell above each hour column. It holds the all-day toggle and, with `secondaryTimeZones`, the time
+   * zone's name.
+   */
   corner?: string | undefined;
   /** The current-time line. */
   currentTime?: string | undefined;
@@ -166,9 +172,16 @@ export type TimeGridViewClassNames = EventPopoverClassNames & {
   grid?: string | undefined;
   /** An hour label in the gutter. */
   hour?: string | undefined;
+  /** A time slot outside `workingHours`, added to `slot`. It exposes `data-off-hours`. */
+  offHours?: string | undefined;
   /** The scrolling root element. */
   root?: string | undefined;
-  /** A time slot cell. It exposes `data-hour-start` on the slots that start an hour. */
+  /** An hour label in a `secondaryTimeZones` column. */
+  secondaryHour?: string | undefined;
+  /**
+   * A time slot cell. It exposes `data-hour-start` on the slots that start an hour, and `data-off-hours` on the ones
+   * outside `workingHours`.
+   */
   slot?: string | undefined;
   /** Today's day number (the filled badge), added to `dayNumber`. */
   today?: string | undefined;
@@ -261,12 +274,37 @@ export type TimeGridViewProps<TData = unknown> = EventPopoverOptions<TData> & {
    * @defaultValue one hour before the current hour
    */
   scrollToTime?: Temporal.PlainTime | undefined;
+  /**
+   * More hour columns, left of the calendar's own, showing the same instants in other time zones. Each column header
+   * shows `label`, or the zone's short name (`formatters.timeZoneName`, e.g. `"GMT-5"`); the calendar's column gets
+   * its name too. Zones whose offset differs by a fraction of an hour (India, Nepal) show minutes, e.g. `"7:30 PM"`.
+   *
+   * @example
+   * secondaryTimeZones={[{ timeZone: "Asia/Kolkata", label: "IST" }]}
+   */
+  secondaryTimeZones?: readonly TimeGridTimeZone[] | undefined;
   /** The event shown as selected (`aria-pressed` and a ring), e.g. the one open in your side panel. */
   selectedEventId?: string | null | undefined;
   /** Length of one row in minutes; must divide 60 evenly. The hour height (`hourHeight`) doesn't change. @defaultValue 30 */
   slotMinutes?: number | undefined;
   /** Step that dragged and keyboard-edited times snap to; must divide 60 evenly. @defaultValue 15 */
   snapMinutes?: number | undefined;
+  /**
+   * Working hours, in the calendar's time zone. Slots starting outside them get `data-off-hours` and a muted
+   * background (`classNames.offHours`). Only marks the grid: it doesn't stop anything from being scheduled there.
+   *
+   * @example
+   * workingHours={{ days: [1, 2, 3, 4, 5], start: Temporal.PlainTime.from("09:00"), end: Temporal.PlainTime.from("18:00") }}
+   */
+  workingHours?: WorkingHours | undefined;
+};
+
+/** A time zone shown in an extra hour column of the {@link TimeGridView}. */
+export type TimeGridTimeZone = {
+  /** Column header. @defaultValue the zone's short name from `formatters.timeZoneName`, e.g. `"GMT-5"` */
+  label?: string | undefined;
+  /** IANA time zone, e.g. `"Asia/Kolkata"`. */
+  timeZone: string;
 };
 
 /**
@@ -312,9 +350,11 @@ export function TimeGridView<TData = unknown>({
   renderEventPopover,
   renderEventWrapper,
   scrollToTime,
+  secondaryTimeZones,
   selectedEventId,
   slotMinutes = SLOT_MINUTES,
   snapMinutes = SNAP_MINUTES,
+  workingHours,
 }: TimeGridViewProps<TData>) {
   const { date, showWeekends, timeZone, today, view, weekStart } =
     useCalendarContext();
@@ -472,6 +512,65 @@ export function TimeGridView<TData = unknown>({
       timeZone,
     ],
   );
+  // Keyed by content, so a new array with the same zones (an inline prop) doesn't redo the labels.
+  const zonesKey = JSON.stringify(
+    (secondaryTimeZones ?? []).map(({ label, timeZone: zone }) => [
+      zone,
+      label ?? null,
+    ]),
+  );
+  const zoneColumns = useMemo(
+    () =>
+      labelTimeZones(
+        JSON.parse(zonesKey) as [
+          string,
+          string | null,
+        ][],
+        days,
+        slotMinutes,
+        {
+          formatters,
+          locale,
+          timeFormat,
+          timeZone,
+        },
+      ),
+    [
+      days,
+      formatters,
+      locale,
+      slotMinutes,
+      timeFormat,
+      timeZone,
+      zonesKey,
+    ],
+  );
+  const workingKey =
+    workingHours === undefined
+      ? null
+      : `${workingHours.days.join(",")}|${workingHours.start}|${workingHours.end}`;
+  // `offHours[day][slot]`; empty without `workingHours`.
+  const offHours = useMemo(() => {
+    if (workingKey === null) return [];
+    const [weekdays = "", start = "", end = ""] = workingKey.split("|");
+    const hours: WorkingHours = {
+      days: weekdays === "" ? [] : weekdays.split(",").map(Number),
+      end: Temporal.PlainTime.from(end),
+      start: Temporal.PlainTime.from(start),
+    };
+    return days.map((day) =>
+      Array.from(
+        {
+          length: slotsPerDay(slotMinutes),
+        },
+        (_, slot) => !isWorkingTime(day, slot * slotMinutes, hours),
+      ),
+    );
+  }, [
+    days,
+    slotMinutes,
+    workingKey,
+  ]);
   const eventTimes = useMemo(() => {
     const context = {
       locale,
@@ -526,18 +625,46 @@ export function TimeGridView<TData = unknown>({
   const { dayEvents, laneSegments, segmentsBySlot, timed } = layout;
   const slotOf = (minute: number) => Math.floor(minute / slotMinutes);
   // The same few class lists repeat in every row: merge them once instead of once per cell.
+  const cornerClassName = cn(
+    "sticky top-0 left-0 z-30 border-uc-border border-b bg-uc-background",
+    classNames?.corner,
+  );
   const hourClassName = cn(
     "sticky left-0 z-10 bg-uc-background pr-2 text-right text-[0.7rem] text-uc-muted-foreground",
     classNames?.hour,
   );
+  const secondaryHourClassName = cn(
+    "sticky left-0 z-10 bg-uc-background pr-2 text-right text-[0.7rem] text-uc-muted-foreground",
+    classNames?.secondaryHour,
+  );
   const slotBase =
     "border-uc-border border-l outline-none focus-visible:bg-uc-accent";
-  const hourSlotClassName = cn(slotBase, "border-t", classNames?.slot);
-  const halfSlotClassName = cn(
+  const hourSlot = [
+    slotBase,
+    "border-t",
+  ];
+  const halfSlot = [
     slotBase,
     "border-t border-t-uc-border/40 border-dashed",
+  ];
+  const offHoursBase = [
+    "bg-uc-muted/60",
     classNames?.slot,
-  );
+    classNames?.offHours,
+  ];
+  const hourSlotClassName = cn(hourSlot, classNames?.slot);
+  const halfSlotClassName = cn(halfSlot, classNames?.slot);
+  const offHourSlotClassName = cn(hourSlot, offHoursBase);
+  const offHalfSlotClassName = cn(halfSlot, offHoursBase);
+  // Hour columns: one per secondary zone, then the calendar's own, then the days.
+  const gutters = zoneColumns.columns.length + 1;
+  const stickyLeft = (column: number) =>
+    column === 0
+      ? undefined
+      : {
+          left: `${column * GUTTER_REM}rem`,
+        };
+  const mainLeft = stickyLeft(gutters - 1);
 
   const laneCount = Math.max(
     0,
@@ -717,7 +844,7 @@ export function TimeGridView<TData = unknown>({
       ref={scrollRef}
     >
       <div
-        aria-colcount={days.length + 1}
+        aria-colcount={days.length + gutters}
         aria-label={labels.grid}
         aria-rowcount={slotCount + 1}
         className={cn(
@@ -733,7 +860,13 @@ export function TimeGridView<TData = unknown>({
           refocusId.current = null;
         }}
         role="grid"
-        style={gridStyle(days.length, headerRem, slotMinutes, hourHeight)}
+        style={gridStyle(
+          days.length,
+          headerRem,
+          slotMinutes,
+          hourHeight,
+          gutters,
+        )}
         {...drag.gridHandlers}
       >
         <div
@@ -742,17 +875,32 @@ export function TimeGridView<TData = unknown>({
         >
           {/* The header cells sit at explicit positions: the all-day lane overlaps them in row 1, and auto-placement
               would otherwise push them (and every slot after them) out of the cells the lane takes. */}
+          {zoneColumns.columns.map((column, index) => (
+            <div
+              className={cornerClassName}
+              key={column.timeZone}
+              role="columnheader"
+              style={{
+                ...stickyLeft(index),
+                gridColumn: index + 1,
+                gridRow: 1,
+              }}
+            >
+              <TimeZoneName name={column.name} />
+            </div>
+          ))}
           <div
-            className={cn(
-              "sticky top-0 left-0 z-30 border-uc-border border-b bg-uc-background",
-              classNames?.corner,
-            )}
+            className={cornerClassName}
             role="columnheader"
             style={{
-              gridColumn: 1,
+              ...mainLeft,
+              gridColumn: gutters,
               gridRow: 1,
             }}
           >
+            {zoneColumns.mainName !== null && (
+              <TimeZoneName name={zoneColumns.mainName} />
+            )}
             {collapsible && (
               <AllDayToggle
                 className={classNames?.allDayToggle}
@@ -780,7 +928,7 @@ export function TimeGridView<TData = unknown>({
                 key={day.toString()}
                 role="columnheader"
                 style={{
-                  gridColumn: index + 2,
+                  gridColumn: index + 1 + gutters,
                   gridRow: 1,
                 }}
               >
@@ -818,6 +966,7 @@ export function TimeGridView<TData = unknown>({
             <AllDayLane
               classNames={classNames}
               days={days}
+              firstColumn={gutters + 1}
               hiddenByColumn={lane.hiddenByColumn}
               lanes={lanes}
               now={now}
@@ -833,16 +982,34 @@ export function TimeGridView<TData = unknown>({
         {slots.map((slot) => {
           const minute = slot * slotMinutes;
           const onHour = minute % 60 === 0;
-          const slotClassName = onHour ? hourSlotClassName : halfSlotClassName;
           return (
             <div
               className="contents"
               key={slot}
               role="row"
             >
+              {zoneColumns.columns.map((column, index) => (
+                <div
+                  className={secondaryHourClassName}
+                  key={column.timeZone}
+                  role="rowheader"
+                  style={stickyLeft(index)}
+                >
+                  {onHour ? (
+                    <span
+                      className={cn("relative block", slot > 0 && "-top-2")}
+                    >
+                      {column.hours[slot]}
+                    </span>
+                  ) : (
+                    <span className="sr-only">{column.rows[slot]}</span>
+                  )}
+                </div>
+              ))}
               <div
                 className={hourClassName}
                 role="rowheader"
+                style={mainLeft}
               >
                 {onHour ? (
                   <span className={cn("relative block", slot > 0 && "-top-2")}>
@@ -858,13 +1025,23 @@ export function TimeGridView<TData = unknown>({
                   eventId: null,
                   slot,
                 });
+                const off = offHours[dayIndex]?.[slot] === true;
                 return (
                   // biome-ignore lint/a11y/useKeyWithClickEvents: the grid's onKeyDown handles Enter/Space on the focused slot.
                   <div
                     aria-label={slotLabels.cells[dayIndex]?.[slot]}
-                    className={slotClassName}
+                    className={
+                      onHour
+                        ? off
+                          ? offHourSlotClassName
+                          : hourSlotClassName
+                        : off
+                          ? offHalfSlotClassName
+                          : halfSlotClassName
+                    }
                     data-focus-key={key}
                     data-hour-start={onHour || undefined}
+                    data-off-hours={off || undefined}
                     key={day.toString()}
                     onClick={() => clickSlot(dayIndex, slot)}
                     onPointerDown={
@@ -1095,6 +1272,102 @@ const labelSlots = (
     ),
   };
 };
+
+/** An extra hour column: its header and its labels per slot. */
+type TimeZoneColumn = {
+  /** Visible labels of the slots that start an hour of the calendar's zone. */
+  hours: string[];
+  /** Header text. */
+  name: string;
+  /** Screen-reader labels of the other slots. */
+  rows: string[];
+  timeZone: string;
+};
+
+/**
+ * Labels of the `secondaryTimeZones` columns, from the first shown day: each line of the calendar's hours shows the
+ * time of that same instant in the other zone. Whole hours use `formatters.hour`, like the calendar's column; zones
+ * off by a fraction of an hour use `formatters.time`. Also names the calendar's own zone when there are others.
+ * A zone listed twice gets one column.
+ */
+const labelTimeZones = (
+  zones: readonly (readonly [
+    string,
+    string | null,
+  ])[],
+  days: readonly Temporal.PlainDate[],
+  slotMinutes: number,
+  {
+    formatters,
+    locale,
+    timeFormat,
+    timeZone,
+  }: Pick<CalendarLocale, "formatters" | "locale" | "timeFormat"> & {
+    timeZone: string;
+  },
+): {
+  columns: TimeZoneColumn[];
+  mainName: string | null;
+} => {
+  const first = days[0];
+  // A zone listed twice would only repeat its column (and its React key).
+  const unique = zones.filter(
+    ([zone], index) => zones.findIndex(([other]) => other === zone) === index,
+  );
+  if (first === undefined || unique.length === 0)
+    return {
+      columns: [],
+      mainName: null,
+    };
+  const context = {
+    locale,
+    timeFormat,
+    timeZone,
+  };
+  const instants = Array.from(
+    {
+      length: slotsPerDay(slotMinutes),
+    },
+    (_, slot) => wallTime(first, slot * slotMinutes, timeZone).toInstant(),
+  );
+  return {
+    columns: unique.map(([zone, label]) => {
+      const zoneContext = {
+        ...context,
+        timeZone: zone,
+      };
+      const times = instants.map((instant) => instant.toZonedDateTimeISO(zone));
+      const rows = times.map((time) =>
+        formatters.time(time.toInstant().toString(), zoneContext),
+      );
+      return {
+        hours: times.map((time, slot) =>
+          time.minute === 0
+            ? formatters.hour(time.hour, zoneContext)
+            : (rows[slot] ?? ""),
+        ),
+        name: label ?? formatters.timeZoneName(first, zoneContext),
+        rows,
+        timeZone: zone,
+      };
+    }),
+    mainName: formatters.timeZoneName(first, context),
+  };
+};
+
+/** A time zone's name in the header cell of its hour column. */
+function TimeZoneName({ name }: { name: string }) {
+  return (
+    <div
+      className="flex items-end justify-end pr-2 pb-1 text-[0.65rem] text-uc-muted-foreground"
+      style={{
+        height: `${DAY_HEADER_REM}rem`,
+      }}
+    >
+      {name}
+    </div>
+  );
+}
 
 type TimeGridEventOwnProps<TData> = {
   ariaKeyShortcuts: string;

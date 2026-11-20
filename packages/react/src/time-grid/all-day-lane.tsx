@@ -16,6 +16,8 @@ type AllDayLaneProps<TData> = {
       }
     | undefined;
   days: readonly Temporal.PlainDate[];
+  /** Grid column of the first day (1-based), after the hour columns. */
+  firstColumn: number;
   hiddenByColumn: readonly number[];
   /** Rows drawn: every lane when expanded, at most two when collapsed. */
   lanes: number;
@@ -38,6 +40,7 @@ type AllDayLaneProps<TData> = {
 export function AllDayLane<TData>({
   classNames,
   days,
+  firstColumn,
   hiddenByColumn,
   lanes,
   now,
@@ -62,7 +65,7 @@ export function AllDayLane<TData>({
       )}
       role="presentation"
       style={{
-        gridColumn: "2 / -1",
+        gridColumn: `${firstColumn} / -1`,
         gridRow: 1,
       }}
     >

@@ -156,6 +156,7 @@ export function Calendar<TData = unknown>(props: CalendarProps<TData>) {
     renderMonthEvent,
     renderMorePopover,
     scrollToTime,
+    secondaryTimeZones,
     selectedEventId,
     showWeekends,
     showWeekNumbers,
@@ -167,6 +168,7 @@ export function Calendar<TData = unknown>(props: CalendarProps<TData>) {
     toolbar = true,
     view,
     weekStart,
+    workingHours,
   } = props;
   // Hooks run unconditionally; with an external state, this one only idles (it has no callbacks to call).
   const internal = useCalendar(
@@ -256,9 +258,11 @@ export function Calendar<TData = unknown>(props: CalendarProps<TData>) {
                   renderEventPopover={renderEventPopover}
                   renderEventWrapper={renderEventWrapper}
                   scrollToTime={scrollToTime}
+                  secondaryTimeZones={secondaryTimeZones}
                   selectedEventId={selectedEventId}
                   slotMinutes={slotMinutes}
                   snapMinutes={snapMinutes}
+                  workingHours={workingHours}
                 />
               )}
             </div>
