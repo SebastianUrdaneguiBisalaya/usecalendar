@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  type CalendarFormatters,
   DEFAULT_FORMATTERS,
   type FormatContext,
+  formatTimeZoneName,
   localeTimeFormat,
 } from "../../src/locale/formatters.js";
 
@@ -151,5 +153,31 @@ describe("localeTimeFormat", () => {
     expect(localeTimeFormat("en-US")).toBe("12h");
     expect(localeTimeFormat("es-ES")).toBe("24h");
     expect(localeTimeFormat("en-GB")).toBe("24h");
+  });
+});
+
+describe("timeZoneName", () => {
+  const day = Temporal.PlainDate.from("2026-11-15");
+
+  it("names a zone by its offset on that day", () => {
+    const context = {
+      locale: "en-US",
+      timeFormat: "12h" as const,
+      timeZone: "Asia/Kolkata",
+    };
+    expect(DEFAULT_FORMATTERS.timeZoneName(day, context)).toBe("GMT+5:30");
+  });
+
+  it("falls back to the default when a complete formatters object leaves it out", () => {
+    // A `CalendarFormatters` written in full before `timeZoneName` existed still type-checks.
+    const { timeZoneName: _, ...withoutZoneName } = DEFAULT_FORMATTERS;
+    const formatters: CalendarFormatters = withoutZoneName;
+    expect(
+      formatTimeZoneName(formatters, day, {
+        locale: "en-US",
+        timeFormat: "24h",
+        timeZone: "America/Lima",
+      }),
+    ).toBe("GMT-5");
   });
 });
