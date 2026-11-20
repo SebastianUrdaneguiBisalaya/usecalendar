@@ -36,6 +36,7 @@ const meta = {
       options: [
         "click",
         "hover",
+        "both",
         false,
       ],
     },
@@ -62,10 +63,21 @@ type Story = StoryObj<typeof meta>;
  */
 export const Click: Story = {};
 
-/** `eventPopover="hover"`: hovering with a mouse opens it after a short delay; a tap still opens it on touch screens. */
+/**
+ * `eventPopover="hover"`: only hovering with a mouse opens it, after a short delay. A click on the event is left to the
+ * app: here it opens an "editor" (logged as `open editor` in the Actions panel) without the popover getting in the way.
+ */
 export const Hover: Story = {
   args: {
     eventPopover: "hover",
+    onEventClick: (event) => action("open editor")(event.id),
+  },
+};
+
+/** `eventPopover="both"`: hovering previews it, and a click (or tap, or Enter) keeps it open. */
+export const Both: Story = {
+  args: {
+    eventPopover: "both",
   },
 };
 
@@ -73,7 +85,7 @@ export const Hover: Story = {
 export const Month: Story = {
   args: {
     defaultView: "month",
-    eventPopover: "hover",
+    eventPopover: "both",
   },
 };
 

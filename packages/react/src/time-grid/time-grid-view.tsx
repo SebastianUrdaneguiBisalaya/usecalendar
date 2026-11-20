@@ -652,7 +652,7 @@ export function TimeGridView<TData = unknown>({
     }
     if (action === "openFocused") {
       if (focused !== undefined) {
-        if (onEventClick === undefined && !popover.enabled) return;
+        if (onEventClick === undefined && !popover.opensOnClick) return;
         event.preventDefault();
         openEvent(focused, target);
         return;

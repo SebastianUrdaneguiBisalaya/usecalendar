@@ -241,7 +241,7 @@ The complete calendar: a toolbar plus the month, week or day view. `Calendar` is
 |---|---|---|---|
 | `events` | `readonly CalendarEvent<TData>[]` | required | The events to draw. |
 | `onEventClick` | `(event) => void` | | An event was clicked, or Enter/Space was pressed on it. It still fires when that opens the event popover. |
-| `eventPopover` | `"click" \| "hover" \| false` | `false` | Shows a popover with the event's details on click (`"click"`), or also on mouse hover (`"hover"`; touch still opens it with a tap). See [Event details popover](#event-details-popover). |
+| `eventPopover` | `"click" \| "hover" \| "both" \| false` | `false` | Shows a popover with the event's details on click (`"click"`), on mouse hover only (`"hover"`), or either (`"both"`). See [Event details popover](#event-details-popover). |
 | `onEventChange` | `(event, range: TimeRange) => void` | | The user moved or resized an event (pointer or keyboard). The calendar doesn't change it: update `events` to accept. |
 | `onSlotClick` | `(range: TimeRange) => void` | | An empty slot was clicked (or Enter/Space on it), with a range of `defaultEventDuration` minutes. |
 | `onRangeSelect` | `(range: TimeRange) => void` | | The user dragged over empty slots, with the swept range. |
@@ -458,12 +458,14 @@ For recurring occurrences, ask "this event or the whole series?" inside `onEvent
 Turn on `eventPopover` to show an event's color, title, date and time, location and description in a popover:
 
 ```tsx
-<Calendar events={events} eventPopover="click" />
-<Calendar events={events} eventPopover="hover" /> // also opens after hovering with a mouse
+<Calendar events={events} eventPopover="click" /> // click, tap or Enter
+<Calendar events={events} eventPopover="hover" onEventClick={openEditor} /> // hover previews it; clicks stay yours
+<Calendar events={events} eventPopover="both" /> // hover previews it, a click keeps it open
 ```
 
 - `"click"` opens it on click, tap, or Enter/Space on a focused event in the week and day views. A second click closes it.
-- `"hover"` also opens it after a short hover with a mouse and closes it when the pointer leaves (unless it moves into the popover). Touch and pen can't hover, so a tap opens it as with `"click"`. Clicking a hovered popover keeps it open.
+- `"hover"` opens it only after a short hover with a mouse, and closes it when the pointer leaves (unless it moves into the popover). Clicks, taps and keys never open it, so `onEventClick` can do something else in your app (open an editor, a side panel) without competing with the popover. Pressing an event closes the preview. Touch, pen and keyboard users can't hover, so keep what they need reachable through `onEventClick`.
+- `"both"` previews it on hover and opens it on click, tap or Enter/Space too. Clicking a hovered popover keeps it open.
 - It closes with Escape (consumed, so the global `close` shortcut doesn't also fire), a press outside it, or a second click on the event. When it was opened by a click or a key, focus moves into it and Escape returns focus to the event.
 - `onEventClick` keeps firing on every click. Dragging an event to move or resize it doesn't open the popover.
 - It uses the native HTML Popover API (`popover="manual"`) and sits beside the event with CSS anchor positioning, flipping to stay on screen. Browsers without anchor positioning show it in the browser's default place.

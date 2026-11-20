@@ -13,10 +13,13 @@ import { useCalendarLocale } from "../locale/locale-context.js";
 import { cn } from "../utils/cn.js";
 
 /**
- * What opens the event popover: `"click"` (click, tap, or Enter/Space on a focused event), or `"hover"` (also
- * hovering with a mouse; touch and pen can't hover, so a tap opens it like `"click"`).
+ * What opens the event popover:
+ * - `"click"`: a click, a tap, or Enter/Space on a focused event.
+ * - `"hover"`: only hovering with a mouse. Clicks, taps and keys are left entirely to your `onEventClick`, so a click
+ *   can do something else in your app. Touch and pen can't hover, so they never open it.
+ * - `"both"`: hovering previews it, and a click, tap or key opens it until dismissed.
  */
-export type EventPopoverTrigger = "click" | "hover";
+export type EventPopoverTrigger = "both" | "click" | "hover";
 
 /** Props of `renderEventPopover`. */
 export type EventPopoverProps<TData = unknown> = {
@@ -33,8 +36,12 @@ export type EventPopoverProps<TData = unknown> = {
 /** Props that turn on the event popover; shared by `MonthView`, `TimeGridView` and `Calendar`. */
 export type EventPopoverOptions<TData = unknown> = {
   /**
-   * Shows a popover with the event's details when it's clicked (`"click"`) or also hovered (`"hover"`). Off by
-   * default. `onEventClick` still fires on every click.
+   * Shows a popover with the event's details when it's clicked (`"click"`), hovered with a mouse (`"hover"`), or
+   * either (`"both"`). Off by default. `onEventClick` still fires on every click.
+   *
+   * Use `"hover"` when a click on an event already does something in your app (opening an editor, a side panel):
+   * the popover is then only a preview and never takes the click. Keyboard and touch users can't open it in that
+   * mode, so keep anything they need reachable through `onEventClick` too.
    *
    * It closes with Escape, a click outside it, or a second click on the event. To use your app's own popover or
    * hover card component instead, leave this off and wrap events with `renderEventWrapper`.
@@ -125,6 +132,8 @@ export const useEventPopover = <TData,>({
     undefined,
   );
   const enabled = eventPopover !== false;
+  const opensOnClick = eventPopover === "click" || eventPopover === "both";
+  const opensOnHover = eventPopover === "hover" || eventPopover === "both";
   const popoverId = `${id}-event-popover`;
   const anchor = `--${popoverId}`;
 
@@ -233,10 +242,10 @@ export const useEventPopover = <TData,>({
 
   /**
    * Opens the popover for a click or key on an event, or closes it when it's already open (pinned) there. Call it
-   * from the event's click handler, next to `onEventClick`.
+   * from the event's click handler, next to `onEventClick`. Does nothing in `"hover"` mode.
    */
   const toggle = (event: CalendarEvent<TData>, element: HTMLElement) => {
-    if (!enabled) return;
+    if (!opensOnClick) return;
     clearTimeout(openTimer.current);
     clearTimeout(closeTimer.current);
     setOpen((state) =>
@@ -263,7 +272,7 @@ export const useEventPopover = <TData,>({
         setOpen((state) => (state === null || state.pinned ? state : null));
       },
     };
-    if (eventPopover !== "hover") return props;
+    if (!opensOnHover) return props;
     props.onPointerEnter = (pointer) => {
       if (pointer.pointerType !== "mouse" || pointer.buttons !== 0) return;
       const element = pointer.currentTarget;
@@ -309,7 +318,7 @@ export const useEventPopover = <TData,>({
     );
 
   return {
-    enabled,
+    opensOnClick,
     popover,
     toggle,
     triggerProps,

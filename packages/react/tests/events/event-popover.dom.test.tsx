@@ -244,10 +244,49 @@ describe("event popover", () => {
     expect(dialog()).toBeNull();
   });
 
-  it("opens on a tap in hover mode, and a hovered popover stays once clicked", () => {
+  it("leaves clicks to the app in hover mode: a click or tap never opens it and closes a preview", () => {
     vi.useFakeTimers();
+    const onEventClick = vi.fn();
     const { container } = mount({
       eventPopover: "hover",
+      onEventClick,
+    });
+    const button = eventButton(container, "Standup");
+    click(button);
+    expect(dialog()).toBeNull();
+    expect(onEventClick).toHaveBeenCalledWith(standup);
+
+    pointer(button, "pointerover", "mouse");
+    act(() => vi.advanceTimersByTime(500));
+    expect(dialog()).not.toBeNull();
+    click(button);
+    expect(dialog()).toBeNull();
+    expect(onEventClick).toHaveBeenCalledTimes(2);
+  });
+
+  it("leaves Enter on a focused time-grid event to onEventClick in hover mode", () => {
+    const onEventClick = vi.fn();
+    const { container } = mount(
+      {
+        eventPopover: "hover",
+        onEventClick,
+      },
+      "week",
+    );
+    const timed = container.querySelector<HTMLElement>(
+      '[data-event-id="standup"]',
+    );
+    if (timed === null) throw new Error("No timed event");
+    act(() => timed.focus());
+    press(timed, "Enter");
+    expect(onEventClick).toHaveBeenCalledWith(standup);
+    expect(dialog()).toBeNull();
+  });
+
+  it("opens on a tap in both mode, and a hovered popover stays once clicked", () => {
+    vi.useFakeTimers();
+    const { container } = mount({
+      eventPopover: "both",
     });
     const button = eventButton(container, "Standup");
     click(button);
