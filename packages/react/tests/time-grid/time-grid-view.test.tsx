@@ -402,6 +402,14 @@ describe("EventBlock", () => {
     expect(html).not.toMatch(/style="[^"]*background/);
   });
 
+  const utcName =
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "UTC",
+      timeZoneName: "shortOffset",
+    })
+      .formatToParts(new Date(0))
+      .find((part) => part.type === "timeZoneName")?.value ?? "UTC";
+
   it("adds an hour column per secondary time zone, named in its header", () => {
     const html = render({
       secondaryTimeZones: [
@@ -417,8 +425,8 @@ describe("EventBlock", () => {
     expect(html).toContain('aria-colcount="10"');
     expect(html).toContain(">GMT-5<");
     expect(html).toContain(">IST<");
-    // The calendar's own column is named too.
-    expect(html).toContain(">GMT<");
+    // The calendar's own column is named too. ICU versions name UTC "GMT" or "GMT+0", so ask Intl.
+    expect(html).toContain(`>${utcName}<`);
     expect(count(html, 'role="rowheader"')).toBe(3 * 48);
     // Midnight UTC is 7 PM in Lima and 5:30 AM in Kolkata: half-hour offsets keep their minutes.
     expect(html).toContain(">7:00 PM<");
@@ -429,7 +437,7 @@ describe("EventBlock", () => {
 
   it("leaves the gutter alone without secondary time zones", () => {
     const html = render();
-    expect(html).not.toContain(">GMT<");
+    expect(html).not.toContain(`>${utcName}<`);
     expect(html).toContain("--uc-time-grid-gutter:4rem");
   });
 
