@@ -125,9 +125,13 @@ export const weekEvents = (
     data: {
       owner: "Luis",
     },
+    description:
+      "Walk through the new onboarding flow.\nBring the latest Figma links and open questions.",
+    location: "Room 4B",
   }),
   timed("lunch", "Lunch with Marta", demoDay(0, base), "13:00", 60, {
     color: COLORS.amber,
+    location: "Café Verde, Av. Larco 812",
   }),
   timed("focus", "Focus time", demoDay(-1, base), "14:00", 120, {
     color: COLORS.sky,
@@ -136,6 +140,7 @@ export const weekEvents = (
     color: COLORS.rose,
   }),
   timed("planning", "Sprint planning", demoDay(2, base), "15:00", 60, {
+    description: "Tentative until the release date is confirmed.",
     status: "tentative",
   }),
   timed("gym", "Gym", demoDay(-2, base), "18:30", 60, {
@@ -144,6 +149,8 @@ export const weekEvents = (
   allDay("holiday", "Company offsite", demoDay(1, base), 1),
   allDay("trip", "Trip to Cusco", demoDay(2, base), 4, {
     color: COLORS.amber,
+    description: "Flight LA2021 leaves at 6:40 AM.",
+    location: "Cusco, Peru",
   }),
 ];
 

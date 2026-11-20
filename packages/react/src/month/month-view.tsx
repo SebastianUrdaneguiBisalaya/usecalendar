@@ -20,6 +20,11 @@ import {
 import { useCalendarContext } from "../calendar/calendar-context.js";
 import { useNow } from "../clock/use-now.js";
 import { EventChip, type EventChipProps } from "../events/event-chip.js";
+import {
+  type EventPopoverClassNames,
+  type EventPopoverOptions,
+  useEventPopover,
+} from "../events/event-popover.js";
 import { eventLook } from "../events/event-style.js";
 import type { RenderEventWrapperProps } from "../events/render-event-wrapper.js";
 import { useCalendarKeymap } from "../hotkeys/keymap-context.js";
@@ -35,7 +40,7 @@ const MIN_ROW_PX = DAY_LABEL_PX + 2 * LANE_PX + 6;
 const WEEK_NUMBER_COLUMN = "2rem";
 
 /** Class names for each part of a {@link MonthView}, merged after the defaults so they win. */
-export type MonthViewClassNames = {
+export type MonthViewClassNames = EventPopoverClassNames & {
   /** The scrolling area holding the week rows. */
   body?: string | undefined;
   /** A day cell. It exposes `data-today` and `data-outside` (days of the previous or next month). */
@@ -92,7 +97,7 @@ export type MonthMorePopoverProps<TData = unknown> = {
 };
 
 /** Props of {@link MonthView}. */
-export type MonthViewProps<TData = unknown> = {
+export type MonthViewProps<TData = unknown> = EventPopoverOptions<TData> & {
   /** Extra classes for the root element, merged after the defaults. */
   className?: string | undefined;
   /** Extra classes per part. */
@@ -108,7 +113,7 @@ export type MonthViewProps<TData = unknown> = {
    * @defaultValue opens that day in the day view (`goToDate(day)` then `setView("day")`)
    */
   onDayClick?: ((day: Temporal.PlainDate) => void) | undefined;
-  /** Called when an event is clicked, in the grid or in a "+N more" popover. */
+  /** Called when an event is clicked, in the grid or in a "+N more" popover (also when that opens the event popover). */
   onEventClick?: ((event: CalendarEvent<TData>) => void) | undefined;
   /**
    * Draws one event, replacing the default `EventChip`. Receives the chip's props (spread them into an
@@ -169,10 +174,12 @@ const cssIdent = (id: string): string => id.replace(/[^\w-]/g, "");
 export function MonthView<TData = unknown>({
   className,
   classNames,
+  eventPopover,
   events,
   onDayClick,
   onEventClick,
   renderEvent,
+  renderEventPopover,
   renderEventWrapper,
   renderMorePopover,
 }: MonthViewProps<TData>) {
@@ -192,6 +199,13 @@ export function MonthView<TData = unknown>({
   const [focused, setFocused] = useState<string | null>(null);
   const now = useNow();
   const id = useId();
+  const popover = useEventPopover({
+    classNames,
+    eventPopover,
+    events,
+    id: cssIdent(id),
+    renderEventPopover,
+  });
 
   // The weeks and their lanes only change with the month, the events and the zone: memoized so focus moves, resizes
   // and clock ticks don't redo the layout. `date` is keyed by its string so a new but equal `PlainDate` doesn't count.
@@ -335,257 +349,270 @@ export function MonthView<TData = unknown>({
         });
 
   return (
-    <div
-      aria-label={labels.grid}
-      className={rootClassName}
-      onFocus={(event) => {
-        const day =
-          event.target instanceof HTMLElement
-            ? event.target.getAttribute("data-day")
-            : null;
-        if (day !== null) setFocused(day);
-      }}
-      onKeyDown={onKeyDown}
-      role="grid"
-    >
+    <>
       <div
-        className={cn(
-          "grid shrink-0 border-uc-border border-b",
-          classNames?.header,
-        )}
-        role="row"
-        style={{
-          gridTemplateColumns: columns,
+        aria-label={labels.grid}
+        className={rootClassName}
+        onFocus={(event) => {
+          const day =
+            event.target instanceof HTMLElement
+              ? event.target.getAttribute("data-day")
+              : null;
+          if (day !== null) setFocused(day);
         }}
+        onKeyDown={onKeyDown}
+        role="grid"
       >
-        {showWeekNumbers && (
-          <div
-            className={cn(
-              "py-1.5 text-center text-[0.7rem] text-uc-muted-foreground",
-              classNames?.weekNumberHeader,
-            )}
-            role="columnheader"
-          >
-            <span className="sr-only">{labels.weekNumberHeader}</span>
-          </div>
-        )}
-        {(weeks[0] ?? []).map((day) => (
-          <div
-            className={cn(
-              "py-1.5 text-center text-uc-muted-foreground text-xs",
-              classNames?.weekday,
-            )}
-            key={day.dayOfWeek}
-            role="columnheader"
-          >
-            {formatters.weekday(day, context)}
-          </div>
-        ))}
-      </div>
-      <div
-        className={cn("grid min-h-0 flex-1 overflow-y-auto", classNames?.body)}
-        ref={bodyRef}
-        role="rowgroup"
-        style={{
-          gridTemplateRows: `repeat(${weeks.length}, minmax(${MIN_ROW_PX}px, 1fr))`,
-        }}
-      >
-        {weeks.map((week, weekIndex) => {
-          const segments = weekSegments[weekIndex] ?? [];
-          const { hiddenByColumn, shown } = fitWeek(
-            segments,
-            week.length,
-            maxLanes,
-          );
-          const weekKey = week[0]?.toString() ?? "";
-          const number = week[0] && weekNumber(week[0], weekStart);
-          return (
+        <div
+          className={cn(
+            "grid shrink-0 border-uc-border border-b",
+            classNames?.header,
+          )}
+          role="row"
+          style={{
+            gridTemplateColumns: columns,
+          }}
+        >
+          {showWeekNumbers && (
             <div
               className={cn(
-                "relative grid border-uc-border border-b last:border-b-0",
-                classNames?.row,
+                "py-1.5 text-center text-[0.7rem] text-uc-muted-foreground",
+                classNames?.weekNumberHeader,
               )}
-              key={weekKey}
-              role="row"
-              style={{
-                gridTemplateColumns: columns,
-              }}
+              role="columnheader"
             >
-              {showWeekNumbers && number !== undefined && (
-                <div
-                  className={cn(
-                    "pt-1.5 text-center text-[0.7rem] text-uc-muted-foreground",
-                    classNames?.weekNumber,
-                  )}
-                  role="rowheader"
-                >
-                  <span aria-hidden>{number}</span>
-                  <span className="sr-only">{labels.weekNumber(number)}</span>
-                </div>
+              <span className="sr-only">{labels.weekNumberHeader}</span>
+            </div>
+          )}
+          {(weeks[0] ?? []).map((day) => (
+            <div
+              className={cn(
+                "py-1.5 text-center text-uc-muted-foreground text-xs",
+                classNames?.weekday,
               )}
-              {week.map((day, column) => {
-                const key = day.toString();
-                const isToday = today !== null && day.equals(today);
-                const isOutside = day.month !== date.month;
-                const daySegments = segments.filter(
-                  (segment) =>
-                    column >= segment.firstColumn &&
-                    column < segment.firstColumn + segment.span,
-                );
-                const hidden = hiddenByColumn[column] ?? 0;
-                const title = formatters.fullDate(day, context);
-                return (
-                  // biome-ignore lint/a11y/useKeyWithClickEvents: the grid's onKeyDown handles Enter/Space on the focused day.
-                  <div
-                    aria-current={isToday ? "date" : undefined}
-                    aria-label={[
-                      title,
-                      ...daySegments.map((segment) => segment.item.title),
-                    ].join(". ")}
-                    className={cn(
-                      "relative min-w-0 cursor-pointer border-uc-border border-l outline-none first:border-l-0 focus-visible:bg-uc-accent",
-                      isOutside && "bg-uc-muted/40 text-uc-muted-foreground",
-                      classNames?.cell,
-                      isOutside && classNames?.outside,
-                    )}
-                    data-day={key}
-                    data-outside={isOutside || undefined}
-                    data-today={isToday || undefined}
-                    key={key}
-                    onClick={() => pickDay(day)}
-                    role="gridcell"
-                    tabIndex={key === activeDay ? 0 : -1}
-                  >
-                    <div
-                      className="flex justify-center pt-1"
-                      style={{
-                        height: DAY_LABEL_PX,
-                      }}
-                    >
-                      <span
-                        className={cn(
-                          "flex size-6 items-center justify-center rounded-full text-xs",
-                          isToday &&
-                            "bg-uc-primary font-medium text-uc-primary-foreground",
-                          classNames?.dayNumber,
-                          isToday && classNames?.today,
-                        )}
-                      >
-                        {formatters.dayNumber(day, context)}
-                      </span>
-                    </div>
-                    {hidden > 0 && (
-                      // Clicks inside the "+N more" area never pick the day underneath.
-                      // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: only stops propagation.
-                      <div
-                        className="absolute inset-x-0.5"
-                        onClick={(event) => event.stopPropagation()}
-                        style={{
-                          height: LANE_PX - 2,
-                          top: DAY_LABEL_PX + (maxLanes - 1) * LANE_PX,
-                        }}
-                      >
-                        <MorePopover
-                          classNames={classNames}
-                          day={day}
-                          events={daySegments.map((segment) => segment.item)}
-                          hiddenCount={hidden}
-                          id={`${cssIdent(id)}-more-${key}`}
-                          label={labels.moreEvents(hidden)}
-                          list={
-                            <ul
-                              className={cn(
-                                "m-0 flex list-none flex-col gap-0.5 p-0",
-                                classNames?.popoverList,
-                              )}
-                            >
-                              {daySegments.map((segment) => (
-                                <li
-                                  key={segment.item.id}
-                                  style={{
-                                    height: LANE_PX - 2,
-                                  }}
-                                >
-                                  {wrap(
-                                    <button
-                                      className={cn(
-                                        "m-0 block size-full cursor-pointer rounded-sm border-0 bg-transparent p-0 text-left text-inherit hover:bg-uc-accent",
-                                        classNames?.event,
-                                      )}
-                                      onClick={() =>
-                                        onEventClick?.(segment.item)
-                                      }
-                                      type="button"
-                                    >
-                                      {drawEvent(
-                                        {
-                                          ...chipProps(segment),
-                                          continuesAfter: false,
-                                          continuesBefore: false,
-                                          span: 1,
-                                        },
-                                        "more",
-                                      )}
-                                    </button>,
-                                    segment.item,
-                                  )}
-                                </li>
-                              ))}
-                            </ul>
-                          }
-                          renderMorePopover={renderMorePopover}
-                          title={title}
-                        />
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-              {/* Event bars sit over the day cells so multi-day events can span them; a bar opens its event, the gaps pick the day. */}
+              key={day.dayOfWeek}
+              role="columnheader"
+            >
+              {formatters.weekday(day, context)}
+            </div>
+          ))}
+        </div>
+        <div
+          className={cn(
+            "grid min-h-0 flex-1 overflow-y-auto",
+            classNames?.body,
+          )}
+          ref={bodyRef}
+          role="rowgroup"
+          style={{
+            gridTemplateRows: `repeat(${weeks.length}, minmax(${MIN_ROW_PX}px, 1fr))`,
+          }}
+        >
+          {weeks.map((week, weekIndex) => {
+            const segments = weekSegments[weekIndex] ?? [];
+            const { hiddenByColumn, shown } = fitWeek(
+              segments,
+              week.length,
+              maxLanes,
+            );
+            const weekKey = week[0]?.toString() ?? "";
+            const number = week[0] && weekNumber(week[0], weekStart);
+            return (
               <div
-                aria-hidden
                 className={cn(
-                  "pointer-events-none absolute inset-y-0 right-0",
-                  classNames?.events,
+                  "relative grid border-uc-border border-b last:border-b-0",
+                  classNames?.row,
                 )}
+                key={weekKey}
+                role="row"
                 style={{
-                  left: showWeekNumbers ? WEEK_NUMBER_COLUMN : "0px",
+                  gridTemplateColumns: columns,
                 }}
               >
-                {shown.map((segment) => (
-                  <Fragment key={segment.item.id}>
-                    {wrap(
-                      <button
-                        className={cn(
-                          "pointer-events-auto absolute m-0 cursor-pointer border-0 bg-transparent px-0.5 py-0 text-left text-inherit",
-                          classNames?.event,
-                        )}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          onEventClick?.(segment.item);
-                        }}
-                        style={{
-                          height: LANE_PX - 2,
-                          left: `${(segment.firstColumn / week.length) * 100}%`,
-                          top: DAY_LABEL_PX + segment.lane * LANE_PX,
-                          width: `${(segment.span / week.length) * 100}%`,
-                        }}
-                        // Keyboard users reach events through the day: Enter picks it.
-                        tabIndex={-1}
-                        type="button"
-                      >
-                        {drawEvent(chipProps(segment), "grid")}
-                      </button>,
-                      segment.item,
+                {showWeekNumbers && number !== undefined && (
+                  <div
+                    className={cn(
+                      "pt-1.5 text-center text-[0.7rem] text-uc-muted-foreground",
+                      classNames?.weekNumber,
                     )}
-                  </Fragment>
-                ))}
+                    role="rowheader"
+                  >
+                    <span aria-hidden>{number}</span>
+                    <span className="sr-only">{labels.weekNumber(number)}</span>
+                  </div>
+                )}
+                {week.map((day, column) => {
+                  const key = day.toString();
+                  const isToday = today !== null && day.equals(today);
+                  const isOutside = day.month !== date.month;
+                  const daySegments = segments.filter(
+                    (segment) =>
+                      column >= segment.firstColumn &&
+                      column < segment.firstColumn + segment.span,
+                  );
+                  const hidden = hiddenByColumn[column] ?? 0;
+                  const title = formatters.fullDate(day, context);
+                  return (
+                    // biome-ignore lint/a11y/useKeyWithClickEvents: the grid's onKeyDown handles Enter/Space on the focused day.
+                    <div
+                      aria-current={isToday ? "date" : undefined}
+                      aria-label={[
+                        title,
+                        ...daySegments.map((segment) => segment.item.title),
+                      ].join(". ")}
+                      className={cn(
+                        "relative min-w-0 cursor-pointer border-uc-border border-l outline-none first:border-l-0 focus-visible:bg-uc-accent",
+                        isOutside && "bg-uc-muted/40 text-uc-muted-foreground",
+                        classNames?.cell,
+                        isOutside && classNames?.outside,
+                      )}
+                      data-day={key}
+                      data-outside={isOutside || undefined}
+                      data-today={isToday || undefined}
+                      key={key}
+                      onClick={() => pickDay(day)}
+                      role="gridcell"
+                      tabIndex={key === activeDay ? 0 : -1}
+                    >
+                      <div
+                        className="flex justify-center pt-1"
+                        style={{
+                          height: DAY_LABEL_PX,
+                        }}
+                      >
+                        <span
+                          className={cn(
+                            "flex size-6 items-center justify-center rounded-full text-xs",
+                            isToday &&
+                              "bg-uc-primary font-medium text-uc-primary-foreground",
+                            classNames?.dayNumber,
+                            isToday && classNames?.today,
+                          )}
+                        >
+                          {formatters.dayNumber(day, context)}
+                        </span>
+                      </div>
+                      {hidden > 0 && (
+                        // Clicks inside the "+N more" area never pick the day underneath.
+                        // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: only stops propagation.
+                        <div
+                          className="absolute inset-x-0.5"
+                          onClick={(event) => event.stopPropagation()}
+                          style={{
+                            height: LANE_PX - 2,
+                            top: DAY_LABEL_PX + (maxLanes - 1) * LANE_PX,
+                          }}
+                        >
+                          <MorePopover
+                            classNames={classNames}
+                            day={day}
+                            events={daySegments.map((segment) => segment.item)}
+                            hiddenCount={hidden}
+                            id={`${cssIdent(id)}-more-${key}`}
+                            label={labels.moreEvents(hidden)}
+                            list={
+                              <ul
+                                className={cn(
+                                  "m-0 flex list-none flex-col gap-0.5 p-0",
+                                  classNames?.popoverList,
+                                )}
+                              >
+                                {daySegments.map((segment) => (
+                                  <li
+                                    key={segment.item.id}
+                                    style={{
+                                      height: LANE_PX - 2,
+                                    }}
+                                  >
+                                    {wrap(
+                                      <button
+                                        {...popover.triggerProps(segment.item)}
+                                        className={cn(
+                                          "m-0 block size-full cursor-pointer rounded-sm border-0 bg-transparent p-0 text-left text-inherit hover:bg-uc-accent",
+                                          classNames?.event,
+                                        )}
+                                        onClick={(click) => {
+                                          onEventClick?.(segment.item);
+                                          popover.toggle(
+                                            segment.item,
+                                            click.currentTarget,
+                                          );
+                                        }}
+                                        type="button"
+                                      >
+                                        {drawEvent(
+                                          {
+                                            ...chipProps(segment),
+                                            continuesAfter: false,
+                                            continuesBefore: false,
+                                            span: 1,
+                                          },
+                                          "more",
+                                        )}
+                                      </button>,
+                                      segment.item,
+                                    )}
+                                  </li>
+                                ))}
+                              </ul>
+                            }
+                            renderMorePopover={renderMorePopover}
+                            title={title}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                {/* Event bars sit over the day cells so multi-day events can span them; a bar opens its event, the gaps pick the day. */}
+                <div
+                  aria-hidden
+                  className={cn(
+                    "pointer-events-none absolute inset-y-0 right-0",
+                    classNames?.events,
+                  )}
+                  style={{
+                    left: showWeekNumbers ? WEEK_NUMBER_COLUMN : "0px",
+                  }}
+                >
+                  {shown.map((segment) => (
+                    <Fragment key={segment.item.id}>
+                      {wrap(
+                        <button
+                          {...popover.triggerProps(segment.item)}
+                          className={cn(
+                            "pointer-events-auto absolute m-0 cursor-pointer border-0 bg-transparent px-0.5 py-0 text-left text-inherit",
+                            classNames?.event,
+                          )}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onEventClick?.(segment.item);
+                            popover.toggle(segment.item, event.currentTarget);
+                          }}
+                          style={{
+                            height: LANE_PX - 2,
+                            left: `${(segment.firstColumn / week.length) * 100}%`,
+                            top: DAY_LABEL_PX + segment.lane * LANE_PX,
+                            width: `${(segment.span / week.length) * 100}%`,
+                          }}
+                          // Keyboard users reach events through the day: Enter picks it.
+                          tabIndex={-1}
+                          type="button"
+                        >
+                          {drawEvent(chipProps(segment), "grid")}
+                        </button>,
+                        segment.item,
+                      )}
+                    </Fragment>
+                  ))}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
-    </div>
+      {popover.popover}
+    </>
   );
 }
 

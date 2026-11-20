@@ -34,6 +34,12 @@ export type {
 } from "./events/event-chip.js";
 export { EventChip } from "./events/event-chip.js";
 export type {
+  EventPopoverClassNames,
+  EventPopoverOptions,
+  EventPopoverProps,
+  EventPopoverTrigger,
+} from "./events/event-popover.js";
+export type {
   EventLook,
   EventSurfaceProps,
   EventVariant,

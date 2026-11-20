@@ -73,6 +73,79 @@ describe("DEFAULT_FORMATTERS", () => {
   });
 });
 
+describe("DEFAULT_FORMATTERS.eventWhen", () => {
+  const when = (
+    event: {
+      allDay?: boolean;
+      endAt: string;
+      startAt: string;
+      timeZone?: string;
+    },
+    context: FormatContext = en,
+  ) =>
+    plain(
+      DEFAULT_FORMATTERS.eventWhen(
+        {
+          id: "event",
+          title: "Event",
+          ...event,
+        },
+        context,
+      ),
+    );
+
+  it("shows a same-day event as its full date and collapsed times, in the calendar's zone", () => {
+    expect(
+      when({
+        endAt: "2026-11-18T15:30:00Z",
+        startAt: "2026-11-18T14:00:00Z",
+      }),
+    ).toBe("Wednesday, November 18, 2026, 9:00 – 10:30 AM");
+  });
+
+  it("shows both dates of a timed event that crosses midnight", () => {
+    expect(
+      when({
+        endAt: "2026-11-19T07:00:00Z",
+        startAt: "2026-11-19T02:00:00Z",
+      }),
+    ).toBe("Nov 18, 2026, 9:00 PM – Nov 19, 2026, 2:00 AM");
+  });
+
+  it("shows a one-day all-day event as its date, read in the event's own zone", () => {
+    expect(
+      when({
+        allDay: true,
+        endAt: "2026-11-19T00:00:00+09:00",
+        startAt: "2026-11-18T00:00:00+09:00",
+        timeZone: "Asia/Tokyo",
+      }),
+    ).toBe("Wednesday, November 18, 2026");
+  });
+
+  it("shows a multi-day all-day event up to its last day (the end is exclusive)", () => {
+    expect(
+      when({
+        allDay: true,
+        endAt: "2026-11-21T05:00:00Z",
+        startAt: "2026-11-18T05:00:00Z",
+      }),
+    ).toBe("November 18 – 20, 2026");
+  });
+
+  it("follows the locale and clock format", () => {
+    expect(
+      when(
+        {
+          endAt: "2026-11-18T15:30:00Z",
+          startAt: "2026-11-18T14:00:00Z",
+        },
+        es,
+      ),
+    ).toBe("miércoles, 18 de noviembre de 2026, 9:00–10:30");
+  });
+});
+
 describe("localeTimeFormat", () => {
   it("reads the locale's default clock", () => {
     expect(localeTimeFormat("en-US")).toBe("12h");

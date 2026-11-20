@@ -186,6 +186,8 @@ type CalendarEvent<TData = unknown> = {
   endAt: string; // exclusive, same format
   allDay?: boolean; // all-day lane / month bar instead of timed placement
   color?: string; // any CSS color: "#6366f1", "oklch(...)", "var(--brand)"
+  description?: string; // longer text, shown in the event popover (line breaks kept)
+  location?: string; // where it takes place, shown in the event popover
   status?: "confirmed" | "tentative"; // tentative events are drawn with stripes
   timeZone?: string; // zone an all-day event was created in (keeps it on the same days everywhere)
   data?: TData; // your own payload, handed back in callbacks
@@ -238,7 +240,8 @@ The complete calendar: a toolbar plus the month, week or day view. `Calendar` is
 | Prop | Type | Default | Description |
 |---|---|---|---|
 | `events` | `readonly CalendarEvent<TData>[]` | required | The events to draw. |
-| `onEventClick` | `(event) => void` | | An event was clicked, or Enter/Space was pressed on it. |
+| `onEventClick` | `(event) => void` | | An event was clicked, or Enter/Space was pressed on it. It still fires when that opens the event popover. |
+| `eventPopover` | `"click" \| "hover" \| false` | `false` | Shows a popover with the event's details on click (`"click"`), or also on mouse hover (`"hover"`; touch still opens it with a tap). See [Event details popover](#event-details-popover). |
 | `onEventChange` | `(event, range: TimeRange) => void` | | The user moved or resized an event (pointer or keyboard). The calendar doesn't change it: update `events` to accept. |
 | `onSlotClick` | `(range: TimeRange) => void` | | An empty slot was clicked (or Enter/Space on it), with a range of `defaultEventDuration` minutes. |
 | `onRangeSelect` | `(range: TimeRange) => void` | | The user dragged over empty slots, with the swept range. |
@@ -263,6 +266,7 @@ The complete calendar: a toolbar plus the month, week or day view. `Calendar` is
 | `renderMonthEvent` | `(chip: EventChipProps, placement: "grid" \| "more") => ReactNode` | Draws an event in the month view (default: `EventChip`). |
 | `renderEventWrapper` | `({ children, event }) => ReactNode` | Wraps every clickable event, e.g. in a context menu. |
 | `renderMorePopover` | `(props: MonthMorePopoverProps) => ReactNode` | Replaces the month view's "+N more" button and popover (native HTML Popover API by default). |
+| `renderEventPopover` | `(props: EventPopoverProps) => ReactNode` | Replaces the content of the event popover (`eventPopover`); the calendar still opens, places and closes it. |
 
 What you return from a render prop goes inside the element that already handles the click, drag and focus, so you can't break those behaviors.
 
@@ -331,7 +335,7 @@ const strip = useMiniCalendar({ days: 5, align: "center", onValueChange: setDay 
 |---|---|
 | `useCalendar(options)` | Headless navigation state: `date`, `view`, `days`, `range`, `today`, and `goToNext`, `goToPrevious`, `goToToday`, `goToDate`, `setView`. Takes the same navigation options as `<Calendar>`. |
 | `CalendarProvider` / `useCalendarContext` | Shares a `CalendarState` with the views and toolbar. `useCalendarContext` throws `CalendarContextError` outside a provider. |
-| `MonthView` | The month grid. Props: `events`, `onEventClick`, `onDayClick`, `renderEvent`, `renderEventWrapper`, `renderMorePopover`, `className`, `classNames`. |
+| `MonthView` | The month grid. Props: `events`, `onEventClick`, `onDayClick`, `eventPopover`, `renderEvent`, `renderEventPopover`, `renderEventWrapper`, `renderMorePopover`, `className`, `classNames`. |
 | `TimeGridView` | The week and day grid (it draws `calendar.days`). It takes the event, editing and rendering props listed under [`<Calendar>`](#events-and-editing). |
 | `CalendarToolbar` | Today, previous and next buttons, title and view switcher. Props: `views`, `className`, `classNames`. It adapts to its own width: under 36rem the view switcher moves to a second row and the title truncates. |
 | `EventChip` / `EventBlock` | The default event look (month and all-day bars, time-grid blocks). Spread the props a render prop receives into them to keep the defaults. |
@@ -445,6 +449,50 @@ For recurring occurrences, ask "this event or the whole series?" inside `onEvent
         <ContextMenuItem onSelect={() => remove(event)}>Delete</ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
+  )}
+/>
+```
+
+### Event details popover
+
+Turn on `eventPopover` to show an event's color, title, date and time, location and description in a popover:
+
+```tsx
+<Calendar events={events} eventPopover="click" />
+<Calendar events={events} eventPopover="hover" /> // also opens after hovering with a mouse
+```
+
+- `"click"` opens it on click, tap, or Enter/Space on a focused event in the week and day views. A second click closes it.
+- `"hover"` also opens it after a short hover with a mouse and closes it when the pointer leaves (unless it moves into the popover). Touch and pen can't hover, so a tap opens it as with `"click"`. Clicking a hovered popover keeps it open.
+- It closes with Escape (consumed, so the global `close` shortcut doesn't also fire), a press outside it, or a second click on the event. When it was opened by a click or a key, focus moves into it and Escape returns focus to the event.
+- `onEventClick` keeps firing on every click. Dragging an event to move or resize it doesn't open the popover.
+- It uses the native HTML Popover API (`popover="manual"`) and sits beside the event with CSS anchor positioning, flipping to stay on screen. Browsers without anchor positioning show it in the browser's default place.
+
+Replace the content and keep the behavior with `renderEventPopover`. It receives the `event`, the formatted `when`, the default `details` to reuse, and `close`:
+
+```tsx
+<Calendar
+  events={events}
+  eventPopover="click"
+  renderEventPopover={({ close, details, event }) => (
+    <div className="flex flex-col gap-3">
+      {details}
+      <button type="button" onClick={() => { close(); openEditor(event.data); }}>Edit</button>
+    </div>
+  )}
+/>
+```
+
+To use your app's own popover or hover card component instead, leave `eventPopover` off and wrap events with `renderEventWrapper`. For example, with shadcn/ui's `HoverCard`:
+
+```tsx
+<Calendar
+  events={events}
+  renderEventWrapper={({ children, event }) => (
+    <HoverCard>
+      <HoverCardTrigger asChild>{children}</HoverCardTrigger>
+      <HoverCardContent>{event.title}</HoverCardContent>
+    </HoverCard>
   )}
 />
 ```
@@ -579,8 +627,14 @@ Dark mode lives in the tokens. It turns on with a `.dark` class or `data-theme="
   className="rounded-uc border border-uc-border"
   classNames={{ toolbar: { title: "text-lg" }, month: { cell: "min-h-28", today: "bg-violet-600" } }}
 />
+<Calendar
+  eventPopover="click"
+  classNames={{ timeGrid: { eventPopover: "w-80", eventPopoverTitle: "text-base" } }}
+/>
 <MiniCalendar classNames={{ day: "rounded-full", selected: "bg-violet-600 text-white" }} />
 ```
+
+The event popover's slots (`eventPopover`, `eventPopoverTitle`, `eventPopoverWhen`, `eventPopoverLocation`, `eventPopoverDescription`) are on both `month` and `timeGrid`. Its color square follows the event's `--uc-event-color` (a ring for tentative events).
 
 The components set nothing visual in inline `style` (only data such as positions and `--uc-event-color`), and the event look lives in `@layer components`. Plain classes and unlayered CSS override everything without `!important`. Fonts are inherited from your app.
 
@@ -604,7 +658,7 @@ Renaming a `classNames` slot, a CSS variable or a `labels` key is treated as a b
 
 - **`locale`** formats every weekday, month, date and time through `Intl` and picks the default clock format. Labels aren't translated automatically.
 - **`labels`** (partial): `today`, `previous`, `next`, `navigation`, `views`, `viewSwitcher`, `grid`, `moreEvents(count)`, `allDayEvents(titles)`, `expandAllDay`, `collapseAllDay`, `tentative`, `weekNumber(n)`, `weekNumberHeader`, `eventKeyboardHint(keys)`, and for the mini calendar `miniCalendar`, `previousDays` and `nextDays`. English defaults are exported as `DEFAULT_LABELS`.
-- **`formatters`** (partial), each `(value, { locale, timeFormat, timeZone }) => string`: `weekday`, `dayNumber`, `fullDate`, `monthYear`, `monthShort` (mini calendar), `hour`, `time` and `timeRange`. Defaults are exported as `DEFAULT_FORMATTERS`.
+- **`formatters`** (partial), each `(value, { locale, timeFormat, timeZone }) => string`: `weekday`, `dayNumber`, `fullDate`, `monthYear`, `monthShort` (mini calendar), `hour`, `time`, `timeRange` and `eventWhen` (the event popover's date and time, e.g. `"Wednesday, November 18, 2026, 9:00 – 10:30 AM"`; it receives the event instead of a date). Defaults are exported as `DEFAULT_FORMATTERS`.
 
 To share one configuration between a `<MiniCalendar>` and the parts of a calendar you compose yourself, wrap them in `CalendarLocaleProvider`. `<Calendar>` renders its own provider from its props. The mini calendar's `locale`, `labels` and `formatters` props apply on top of the nearest provider.
 
@@ -686,6 +740,7 @@ const shortcuts = [
 
 - The month view and the time grid are ARIA `grid`s with a single tab stop and roving focus. Today is marked with `aria-current="date"`.
 - Events are buttons named by their title and time (and "Tentative" in the week and day views), with `aria-pressed` for the selected one. A focused event in the time grid describes its move and resize shortcuts, built from the keys actually bound (remapped or turned-off shortcuts are reflected).
+- The event popover is a `dialog` named by the event's title. Events that open it expose `aria-haspopup="dialog"` and `aria-expanded`. Opened by a click or a key, it takes focus and gives it back to the event on Escape. Opened by hovering, it never moves focus.
 - The mini calendar is a horizontal `listbox`. Each day is an `option` with a full-date label, `aria-selected`, `aria-disabled` and `aria-current="date"`, and the arrows are labeled buttons.
 - Every visible and screen-reader text is translatable through `labels`.
 - Focus rings use the `--uc-ring` token. Don't remove them without a replacement.

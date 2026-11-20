@@ -30,6 +30,7 @@ import {
   type ReactElement,
   type ReactNode,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -38,6 +39,12 @@ import { useCalendarContext } from "../calendar/calendar-context.js";
 import { useNow } from "../clock/use-now.js";
 import { EventBlock, type EventBlockProps } from "../events/event-block.js";
 import type { EventChipProps } from "../events/event-chip.js";
+import {
+  type EventPopoverClassNames,
+  type EventPopoverOptions,
+  type EventPopoverTriggerProps,
+  useEventPopover,
+} from "../events/event-popover.js";
 import { eventLook } from "../events/event-style.js";
 import type { RenderEventWrapperProps } from "../events/render-event-wrapper.js";
 import { useCalendarKeymap } from "../hotkeys/keymap-context.js";
@@ -132,7 +139,7 @@ const parseFocusKey = (key: string): GridFocus => {
 };
 
 /** Class names for each part of a {@link TimeGridView}, merged after the defaults so they win. */
-export type TimeGridViewClassNames = {
+export type TimeGridViewClassNames = EventPopoverClassNames & {
   /** The button around each all-day event bar. */
   allDayEvent?: string | undefined;
   /** The all-day lane under the day headers. */
@@ -168,7 +175,7 @@ export type TimeGridViewClassNames = {
 };
 
 /** Props of {@link TimeGridView}. */
-export type TimeGridViewProps<TData = unknown> = {
+export type TimeGridViewProps<TData = unknown> = EventPopoverOptions<TData> & {
   /** Whether the all-day lane is collapsed to two rows (controlled). Pair it with `onAllDayCollapsedChange`. */
   allDayCollapsed?: boolean | undefined;
   /** Extra classes for the root element, merged after the defaults. */
@@ -206,7 +213,10 @@ export type TimeGridViewProps<TData = unknown> = {
   onEventChange?:
     | ((event: CalendarEvent<TData>, range: TimeRange) => void)
     | undefined;
-  /** Called when an event is clicked, or the `openFocused` shortcut (Enter/Space) is pressed on it. */
+  /**
+   * Called when an event is clicked, or the `openFocused` shortcut (Enter/Space) is pressed on it (also when that
+   * opens the event popover).
+   */
   onEventClick?: ((event: CalendarEvent<TData>) => void) | undefined;
   /** Called when the user drags over empty slots, with the swept range (snapped to `snapMinutes`). */
   onRangeSelect?: ((range: TimeRange) => void) | undefined;
@@ -286,6 +296,7 @@ export function TimeGridView<TData = unknown>({
   defaultEventDuration = 60,
   draftRange,
   editable = true,
+  eventPopover,
   events,
   hourHeight = HOUR_HEIGHT_REM,
   isEventEditable,
@@ -296,6 +307,7 @@ export function TimeGridView<TData = unknown>({
   onSlotClick,
   renderAllDayEvent,
   renderEvent,
+  renderEventPopover,
   renderEventWrapper,
   scrollToTime,
   selectedEventId,
@@ -321,6 +333,19 @@ export function TimeGridView<TData = unknown>({
   // An event moved from the keyboard can land in another slot, which remounts it: focus follows it there.
   const refocusId = useRef<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  // `useId` returns characters (`:`, `«`) that aren't valid in a CSS `anchor-name`.
+  const id = useId().replace(/[^\w-]/g, "");
+  const popover = useEventPopover({
+    classNames,
+    eventPopover,
+    events,
+    id,
+    renderEventPopover,
+  });
+  const openEvent = (event: CalendarEvent<TData>, element: HTMLElement) => {
+    onEventClick?.(event);
+    popover.toggle(event, element);
+  };
 
   // Everything below is derived from these values; memoized on them so a drag, a focus move or a clock tick doesn't
   // redo the layout. `date` is keyed by its string so a new but equal `PlainDate` doesn't count as a change.
@@ -627,9 +652,9 @@ export function TimeGridView<TData = unknown>({
     }
     if (action === "openFocused") {
       if (focused !== undefined) {
-        if (onEventClick === undefined) return;
+        if (onEventClick === undefined && !popover.enabled) return;
         event.preventDefault();
-        onEventClick(focused);
+        openEvent(focused, target);
         return;
       }
       if (onSlotClick === undefined) return;
@@ -794,8 +819,9 @@ export function TimeGridView<TData = unknown>({
               hiddenByColumn={lane.hiddenByColumn}
               lanes={lanes}
               now={now}
-              onEventClick={onEventClick}
               onExpand={() => setCollapsed(false)}
+              onOpen={openEvent}
+              popoverProps={popover.triggerProps}
               renderAllDayEvent={renderAllDayEvent}
               segments={lane.shown}
               wrap={wrap}
@@ -884,13 +910,16 @@ export function TimeGridView<TData = unknown>({
                                 .filter(Boolean)
                                 .join(", ")}
                               look={eventLook(segment.item, now)}
-                              onClick={() => onEventClick?.(segment.item)}
+                              onClick={(element) =>
+                                openEvent(segment.item, element)
+                              }
                               onMovePointerDown={(pointer) =>
                                 drag.startMove(pointer, segment.item)
                               }
                               onResizePointerDown={(pointer) =>
                                 drag.startResize(pointer, segment.item)
                               }
+                              popoverProps={popover.triggerProps(segment.item)}
                               refocus={(node) => refocus(node, segment.item.id)}
                               renderEvent={renderEvent}
                               segment={segment}
@@ -937,6 +966,7 @@ export function TimeGridView<TData = unknown>({
           />
         )}
       </div>
+      {popover.popover}
     </div>
   );
 }
@@ -1080,9 +1110,11 @@ type TimeGridEventProps<TData> = {
   keyboardHint: string;
   label: string;
   look: ReturnType<typeof eventLook>;
-  onClick: () => void;
+  onClick: (element: HTMLElement) => void;
   onMovePointerDown: (pointer: PointerEvent<HTMLElement>) => void;
   onResizePointerDown: (pointer: PointerEvent<HTMLElement>) => void;
+  /** Event popover trigger attributes and hover handlers (empty when the popover is off). */
+  popoverProps: EventPopoverTriggerProps;
   refocus: (node: HTMLButtonElement | null) => void;
   renderEvent: ((block: EventBlockProps<TData>) => ReactNode) | undefined;
   segment: DaySegment<CalendarEvent<TData>>;
@@ -1107,6 +1139,7 @@ function TimeGridEvent<TData>({
   onClick,
   onMovePointerDown,
   onResizePointerDown,
+  popoverProps,
   refocus,
   renderEvent,
   segment,
@@ -1133,6 +1166,7 @@ function TimeGridEvent<TData>({
   };
   return (
     <button
+      {...popoverProps}
       aria-description={
         editable && keyboardHint !== "" ? keyboardHint : undefined
       }
@@ -1152,7 +1186,7 @@ function TimeGridEvent<TData>({
       onClick={(click) => {
         // The slot under the event would start a new one.
         click.stopPropagation();
-        onClick();
+        onClick(click.currentTarget);
       }}
       onPointerDown={
         editable

@@ -178,6 +178,16 @@
   [data-uc-event][data-tentative] [data-uc-event-dot] {
     background-color: transparent;
   }
+
+  /* The color square in the event popover: filled, or a ring for tentative events. */
+  [data-uc-event-swatch] {
+    background-color: var(--uc-event-color, var(--uc-muted-foreground));
+    border-color: var(--uc-event-color, var(--uc-muted-foreground));
+  }
+
+  [data-uc-event-swatch][data-tentative] {
+    background-color: transparent;
+  }
 }
 
 /*
@@ -195,6 +205,19 @@
         flip-block,
         flip-inline,
         flip-block flip-inline;
+    }
+
+    /* The event popover sits beside its event (tall time-grid blocks included), else below or above it. */
+    [data-uc-event-popover] {
+      inset: auto;
+      margin: 0 0.5rem;
+      position-area: right span-bottom;
+      position-try-fallbacks:
+        flip-inline,
+        bottom span-right,
+        top span-right,
+        bottom,
+        top;
     }
   }
 }

@@ -1,4 +1,8 @@
-import type { TimeFormat } from "@usecalendar/core";
+import {
+  type CalendarEvent,
+  itemDays,
+  type TimeFormat,
+} from "@usecalendar/core";
 
 /** Where and how a date or time is being shown; passed to every formatter. */
 export type FormatContext = {
@@ -23,6 +27,12 @@ export type FormatContext = {
 export type CalendarFormatters = {
   /** Day number in a month cell, e.g. `"15"`. */
   dayNumber: (day: Temporal.PlainDate, context: FormatContext) => string;
+  /**
+   * When an event happens, in the event popover: `"Wednesday, November 18, 2026, 9:00 – 10:30 AM"`,
+   * `"Nov 18, 2026, 9:00 PM – Nov 19, 2026, 2:00 AM"`, `"Wednesday, November 18, 2026"` (all-day) or
+   * `"November 18 – 20, 2026"` (all-day over several days; `endAt` is exclusive).
+   */
+  eventWhen: (event: CalendarEvent, context: FormatContext) => string;
   /** A full date for headings and screen readers, e.g. `"Sunday, November 15, 2026"`. */
   fullDate: (day: Temporal.PlainDate, context: FormatContext) => string;
   /** Hour label in the time grid's gutter, e.g. `"9:00 AM"` or `"09:00"`. `hour` is 0–23. */
@@ -80,6 +90,25 @@ export const DEFAULT_FORMATTERS: CalendarFormatters = {
       day: "numeric",
       timeZone: "UTC",
     }).format(utcDate(day)),
+  eventWhen: (event, context) => {
+    const { first, last } = itemDays(event, context.timeZone);
+    if (event.allDay === true)
+      return first.equals(last)
+        ? intl(context.locale, {
+            dateStyle: "full",
+            timeZone: "UTC",
+          }).format(utcDate(first))
+        : intl(context.locale, {
+            dateStyle: "long",
+            timeZone: "UTC",
+          }).formatRange(utcDate(first), utcDate(last));
+    return intl(context.locale, {
+      dateStyle: first.equals(last) ? "full" : "medium",
+      hourCycle: hourCycle(context.timeFormat),
+      timeStyle: "short",
+      timeZone: context.timeZone,
+    }).formatRange(new Date(event.startAt), new Date(event.endAt));
+  },
   fullDate: (day, { locale }) =>
     intl(locale, {
       dateStyle: "full",
