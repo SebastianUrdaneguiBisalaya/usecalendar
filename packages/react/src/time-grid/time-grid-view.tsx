@@ -53,6 +53,7 @@ import type { RenderEventWrapperProps } from "../events/render-event-wrapper.js"
 import { useCalendarKeymap } from "../hotkeys/keymap-context.js";
 import { useIsMac } from "../hotkeys/platform.js";
 import { useEventKeyboardHint } from "../hotkeys/use-event-keyboard-hint.js";
+import { formatTimeZoneName } from "../locale/formatters.js";
 import {
   type CalendarLocale,
   useCalendarLocale,
@@ -1346,12 +1347,12 @@ const labelTimeZones = (
             ? formatters.hour(time.hour, zoneContext)
             : (rows[slot] ?? ""),
         ),
-        name: label ?? formatters.timeZoneName(first, zoneContext),
+        name: label ?? formatTimeZoneName(formatters, first, zoneContext),
         rows,
         timeZone: zone,
       };
     }),
-    mainName: formatters.timeZoneName(first, context),
+    mainName: formatTimeZoneName(formatters, first, context),
   };
 };
 

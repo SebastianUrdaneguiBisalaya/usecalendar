@@ -45,9 +45,12 @@ export type CalendarFormatters = {
   time: (instant: string, context: FormatContext) => string;
   /**
    * Short name of `context.timeZone` on `day`, above each hour column of the time grid when it shows
-   * `secondaryTimeZones`, e.g. `"GMT-5"` or `"GMT+5:30"`.
+   * `secondaryTimeZones`, e.g. `"GMT-5"` or `"GMT+5:30"`. Optional, so objects typed as a complete `CalendarFormatters`
+   * without it keep compiling; when it's missing, the default from {@link DEFAULT_FORMATTERS} is used.
    */
-  timeZoneName: (day: Temporal.PlainDate, context: FormatContext) => string;
+  timeZoneName?:
+    | ((day: Temporal.PlainDate, context: FormatContext) => string)
+    | undefined;
   /** An event's start–end span, collapsed where possible, e.g. `"9:00 – 10:30 AM"`. */
   timeRange: (start: string, end: string, context: FormatContext) => string;
   /** Weekday column header, e.g. `"Mon"`. */
@@ -88,8 +91,40 @@ const timeOptions = ({
   timeZone,
 });
 
+/** Short name of `context.timeZone` on `day`, from `Intl` (`"GMT-5"`). */
+const defaultTimeZoneName = (
+  day: Temporal.PlainDate,
+  { locale, timeZone }: FormatContext,
+): string => {
+  // At noon: the offset a day mostly has, away from the usual midnight-to-3:00 daylight saving changes.
+  const noon = day.toZonedDateTime({
+    plainTime: Temporal.PlainTime.from("12:00"),
+    timeZone,
+  }).epochMilliseconds;
+  return (
+    intl(locale, {
+      timeZone,
+      timeZoneName: "shortOffset",
+    })
+      .formatToParts(new Date(noon))
+      .find((part) => part.type === "timeZoneName")?.value ?? timeZone
+  );
+};
+
+/** Formats the name of a time zone with `formatters.timeZoneName`, or the `Intl` default when it isn't set. */
+export const formatTimeZoneName = (
+  formatters: CalendarFormatters,
+  day: Temporal.PlainDate,
+  context: FormatContext,
+): string => (formatters.timeZoneName ?? defaultTimeZoneName)(day, context);
+
 /** The `Intl`-based formatters used for anything not passed in `formatters`. */
-export const DEFAULT_FORMATTERS: CalendarFormatters = {
+export const DEFAULT_FORMATTERS: Required<{
+  [Key in keyof CalendarFormatters]: Exclude<
+    CalendarFormatters[Key],
+    undefined
+  >;
+}> = {
   dayNumber: (day, { locale }) =>
     intl(locale, {
       day: "numeric",
@@ -142,21 +177,7 @@ export const DEFAULT_FORMATTERS: CalendarFormatters = {
       new Date(start),
       new Date(end),
     ),
-  timeZoneName: (day, { locale, timeZone }) => {
-    // At noon: the offset a day mostly has, away from the usual midnight-to-3:00 daylight saving changes.
-    const noon = day.toZonedDateTime({
-      plainTime: Temporal.PlainTime.from("12:00"),
-      timeZone,
-    }).epochMilliseconds;
-    return (
-      intl(locale, {
-        timeZone,
-        timeZoneName: "shortOffset",
-      })
-        .formatToParts(new Date(noon))
-        .find((part) => part.type === "timeZoneName")?.value ?? timeZone
-    );
-  },
+  timeZoneName: defaultTimeZoneName,
   weekday: (day, { locale }) =>
     intl(locale, {
       timeZone: "UTC",
