@@ -92,6 +92,19 @@ describe("eventSizing", () => {
   });
 });
 
+describe("gridStyle with several time zones", () => {
+  it("adds one hour column per time zone and widens the gutter", () => {
+    const style = gridStyle(7, 3, 30, 3, 3);
+    expect(style.gridTemplateColumns).toBe(
+      `${GUTTER_REM}rem ${GUTTER_REM}rem ${GUTTER_REM}rem repeat(7, minmax(7rem, 1fr))`,
+    );
+    expect((style as Record<string, unknown>)["--uc-time-grid-gutter"]).toBe(
+      `${3 * GUTTER_REM}rem`,
+    );
+    expect(style.minWidth).toBe(`${3 * GUTTER_REM + 7 * 7}rem`);
+  });
+});
+
 describe("boxStyle", () => {
   it("places a box vertically on the hour scale, below the header", () => {
     expect(boxStyle(0, 1, 90, 150)).toMatchObject({
@@ -100,10 +113,10 @@ describe("boxStyle", () => {
     });
   });
 
-  it("places a box by percentage of the grid width, after the gutter", () => {
+  it("places a box by percentage of the grid width, after the hour columns", () => {
     expect(boxStyle(2, 7, 60, 120)).toMatchObject({
-      left: `calc(${GUTTER_REM}rem + (100% - ${GUTTER_REM}rem) / 7 * 2)`,
-      width: `calc((100% - ${GUTTER_REM}rem) / 7 / 1)`,
+      left: "calc(var(--uc-time-grid-gutter) + (100% - var(--uc-time-grid-gutter)) / 7 * 2)",
+      width: "calc((100% - var(--uc-time-grid-gutter)) / 7 / 1)",
     });
   });
 });

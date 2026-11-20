@@ -106,6 +106,40 @@ export const Day: Story = {
   },
 };
 
+/** `secondaryTimeZones`: Lima and Kolkata (a half-hour offset) beside the calendar's own hours. */
+export const SecondaryTimeZones: Story = {
+  args: {
+    defaultView: "week",
+    secondaryTimeZones: [
+      {
+        timeZone: "America/Lima",
+      },
+      {
+        label: "IST",
+        timeZone: "Asia/Kolkata",
+      },
+    ],
+  },
+};
+
+/** `workingHours`: Monday to Friday, 9:00 to 18:00; every other slot is muted and has `data-off-hours`. */
+export const WorkingHours: Story = {
+  args: {
+    defaultView: "week",
+    workingHours: {
+      days: [
+        1,
+        2,
+        3,
+        4,
+        5,
+      ],
+      end: Temporal.PlainTime.from("18:00"),
+      start: Temporal.PlainTime.from("09:00"),
+    },
+  },
+};
+
 /** `editable={false}`: events can be clicked, but not dragged, resized or moved with the keyboard. */
 export const ReadOnly: Story = {
   args: {

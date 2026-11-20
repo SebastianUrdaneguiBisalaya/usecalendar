@@ -255,6 +255,8 @@ The complete calendar: a toolbar plus the month, week or day view. `Calendar` is
 | `hourHeight` | `number \| string` | `3` | Height of one hour in the week and day views: a number in rem, or any CSS length (`"64px"`). Rows, events and the current-time line scale with it. |
 | `snapMinutes` | `number` | `15` | Step dragged and keyboard-edited times snap to. Must divide 60. |
 | `scrollToTime` | `Temporal.PlainTime` | one hour before now | Where the time grid scrolls on mount. |
+| `secondaryTimeZones` | `{ timeZone: string; label?: string }[]` | | More hour columns, left of the calendar's own, showing the same instants in other zones. Headers show `label` or the zone's short name (`"GMT-5"`); half-hour offsets keep their minutes (`"5:30 AM"`). |
+| `workingHours` | `WorkingHours` | | `{ days, start, end }` in the calendar's zone (`days` are ISO weekdays, 1 = Monday). Slots starting outside get `data-off-hours` and a muted background. |
 | `allDayCollapsed` / `defaultAllDayCollapsed` / `onAllDayCollapsedChange` | `boolean` | `false` | Whether the all-day lane is collapsed to two rows. |
 
 #### Rendering
@@ -636,6 +638,15 @@ Dark mode lives in the tokens. It turns on with a `.dark` class or `data-theme="
 <MiniCalendar classNames={{ day: "rounded-full", selected: "bg-violet-600 text-white" }} />
 ```
 
+Time grid slots outside `workingHours` get `classNames.timeGrid.offHours` on top of `slot`, and a `data-off-hours` attribute; the hour labels of `secondaryTimeZones` columns use `secondaryHour`:
+
+```tsx
+<Calendar
+  workingHours={{ days: [1, 2, 3, 4, 5], start: Temporal.PlainTime.from("09:00"), end: Temporal.PlainTime.from("18:00") }}
+  classNames={{ timeGrid: { offHours: "bg-uc-accent/40" } }}
+/>
+```
+
 The event popover's slots (`eventPopover`, `eventPopoverTitle`, `eventPopoverWhen`, `eventPopoverLocation`, `eventPopoverDescription`) are on both `month` and `timeGrid`. Its color square follows the event's `--uc-event-color` (a ring for tentative events).
 
 The components set nothing visual in inline `style` (only data such as positions and `--uc-event-color`), and the event look lives in `@layer components`. Plain classes and unlayered CSS override everything without `!important`. Fonts are inherited from your app.
@@ -660,7 +671,7 @@ Renaming a `classNames` slot, a CSS variable or a `labels` key is treated as a b
 
 - **`locale`** formats every weekday, month, date and time through `Intl` and picks the default clock format. Labels aren't translated automatically.
 - **`labels`** (partial): `today`, `previous`, `next`, `navigation`, `views`, `viewSwitcher`, `grid`, `moreEvents(count)`, `allDayEvents(titles)`, `expandAllDay`, `collapseAllDay`, `tentative`, `weekNumber(n)`, `weekNumberHeader`, `eventKeyboardHint(keys)`, and for the mini calendar `miniCalendar`, `previousDays` and `nextDays`. English defaults are exported as `DEFAULT_LABELS`.
-- **`formatters`** (partial), each `(value, { locale, timeFormat, timeZone }) => string`: `weekday`, `dayNumber`, `fullDate`, `monthYear`, `monthShort` (mini calendar), `hour`, `time`, `timeRange` and `eventWhen` (the event popover's date and time, e.g. `"Wednesday, November 18, 2026, 9:00 – 10:30 AM"`; it receives the event instead of a date). Defaults are exported as `DEFAULT_FORMATTERS`.
+- **`formatters`** (partial), each `(value, { locale, timeFormat, timeZone }) => string`: `weekday`, `dayNumber`, `fullDate`, `monthYear`, `monthShort` (mini calendar), `hour`, `time`, `timeRange`, `timeZoneName` (the header of each hour column when `secondaryTimeZones` is set; it receives the day and the column's zone in `context.timeZone`) and `eventWhen` (the event popover's date and time, e.g. `"Wednesday, November 18, 2026, 9:00 – 10:30 AM"`; it receives the event instead of a date). Defaults are exported as `DEFAULT_FORMATTERS`.
 
 To share one configuration between a `<MiniCalendar>` and the parts of a calendar you compose yourself, wrap them in `CalendarLocaleProvider`. `<Calendar>` renders its own provider from its props. The mini calendar's `locale`, `labels` and `formatters` props apply on top of the nearest provider.
 

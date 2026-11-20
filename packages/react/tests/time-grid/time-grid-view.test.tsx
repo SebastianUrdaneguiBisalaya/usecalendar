@@ -172,7 +172,9 @@ describe("TimeGridView", () => {
     expect(html).toContain("height:calc(var(--uc-time-grid-hour) * 1)");
     expect(html).toContain("* 2)");
     expect(html).toContain("* 2.5)");
-    expect(html).toContain("width:calc((100% - 4rem) / 7 / 2)");
+    expect(html).toContain(
+      "width:calc((100% - var(--uc-time-grid-gutter)) / 7 / 2)",
+    );
     expect(html).toMatch(/aria-label="Event a, 9:00\s–\s10:00\sAM"/);
     expect(html).toMatch(/aria-label="Event b, 9:30\s–\s11:00\sAM, Tentative"/);
     expect(html).toContain('data-variant="block"');
@@ -398,5 +400,63 @@ describe("EventBlock", () => {
     expect(html).toContain("data-past");
     expect(html).toContain("text-uc-muted-foreground");
     expect(html).not.toMatch(/style="[^"]*background/);
+  });
+
+  it("adds an hour column per secondary time zone, named in its header", () => {
+    const html = render({
+      secondaryTimeZones: [
+        {
+          timeZone: "America/Lima",
+        },
+        {
+          label: "IST",
+          timeZone: "Asia/Kolkata",
+        },
+      ],
+    });
+    expect(html).toContain('aria-colcount="10"');
+    expect(html).toContain(">GMT-5<");
+    expect(html).toContain(">IST<");
+    // The calendar's own column is named too.
+    expect(html).toContain(">GMT<");
+    expect(count(html, 'role="rowheader"')).toBe(3 * 48);
+    // Midnight UTC is 7 PM in Lima and 5:30 AM in Kolkata: half-hour offsets keep their minutes.
+    expect(html).toContain(">7:00 PM<");
+    expect(html).toContain(">5:30 AM<");
+    expect(html).toContain("left:8rem");
+    expect(html).toContain("--uc-time-grid-gutter:12rem");
+  });
+
+  it("leaves the gutter alone without secondary time zones", () => {
+    const html = render();
+    expect(html).not.toContain(">GMT<");
+    expect(html).toContain("--uc-time-grid-gutter:4rem");
+  });
+
+  it("marks and mutes the slots outside the working hours", () => {
+    const html = render({
+      classNames: {
+        offHours: "my-off",
+      },
+      workingHours: {
+        days: [
+          1,
+          2,
+          3,
+          4,
+          5,
+        ],
+        end: Temporal.PlainTime.from("17:00"),
+        start: Temporal.PlainTime.from("09:00"),
+      },
+    });
+    // Weekdays work 16 of 48 slots; the weekend has none.
+    expect(count(html, "data-off-hours")).toBe(5 * 32 + 2 * 48);
+    expect(count(html, "my-off")).toBe(5 * 32 + 2 * 48);
+    expect(html).toContain("bg-uc-muted/60");
+  });
+
+  it("marks no slot without working hours", () => {
+    expect(render()).not.toContain("data-off-hours");
   });
 });

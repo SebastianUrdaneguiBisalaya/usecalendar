@@ -8,6 +8,7 @@ export const HOUR_HEIGHT_REM = 3;
 export const DAY_HEADER_REM = 3;
 /** One row of the all-day lane. */
 export const ALL_DAY_LANE_REM = 1.375;
+/** Width of one hour column; the grid has one per time zone shown. */
 export const GUTTER_REM = 4;
 /** Narrowest day column in the week view; below it the grid scrolls sideways. */
 const MIN_DAY_REM = 7;
@@ -20,6 +21,8 @@ const COMPACT_EVENT_REM = 3;
 // both from these variables, set once on the grid, instead of props.
 const HEADER = "var(--uc-time-grid-header)";
 const HOUR = "var(--uc-time-grid-hour)";
+/** Width of every hour column together. */
+const GUTTER = "var(--uc-time-grid-gutter)";
 
 /** CSS length of `minutes` on the grid's scale. */
 const minutesToLength = (minutes: number) => `${HOUR} * ${minutes / 60}`;
@@ -71,7 +74,7 @@ export const slotsPerDay = (slotMinutes: number): number =>
   MINUTES_PER_DAY / slotMinutes;
 
 /**
- * Grid tracks: the hour gutter and one column per day; the header row and one row per slot.
+ * Grid tracks: `gutters` hour columns (one per time zone) and one column per day; the header row and one row per slot.
  *
  * `minWidth` matches the tracks' minimum, so the grid's own box grows with them instead of the tracks overflowing it.
  * That box is the containing block of the sticky hour gutter and of every absolutely placed box (`boxStyle`): if it
@@ -83,14 +86,22 @@ export const gridStyle = (
   headerRem: number,
   slotMinutes: number,
   hourHeight: number | string = HOUR_HEIGHT_REM,
+  gutters = 1,
 ): CSSProperties => {
   const minDayRem = dayCount > 1 ? MIN_DAY_REM : 0;
+  const gutterRem = gutters * GUTTER_REM;
   return {
+    "--uc-time-grid-gutter": `${gutterRem}rem`,
     "--uc-time-grid-header": `${headerRem}rem`,
     "--uc-time-grid-hour": hourHeightLength(hourHeight),
-    gridTemplateColumns: `${GUTTER_REM}rem repeat(${dayCount}, minmax(${minDayRem}rem, 1fr))`,
+    gridTemplateColumns: `${Array.from(
+      {
+        length: gutters,
+      },
+      () => `${GUTTER_REM}rem`,
+    ).join(" ")} repeat(${dayCount}, minmax(${minDayRem}rem, 1fr))`,
     gridTemplateRows: `${HEADER} repeat(${slotsPerDay(slotMinutes)}, calc(${minutesToLength(slotMinutes)}))`,
-    minWidth: `${GUTTER_REM + dayCount * minDayRem}rem`,
+    minWidth: `${gutterRem + dayCount * minDayRem}rem`,
   } as CSSProperties;
 };
 
@@ -103,10 +114,10 @@ export const boxStyle = (
   column = 0,
   columns = 1,
 ): Pick<CSSProperties, "height" | "left" | "top" | "width"> => {
-  const dayWidth = `(100% - ${GUTTER_REM}rem) / ${dayCount}`;
+  const dayWidth = `(100% - ${GUTTER}) / ${dayCount}`;
   return {
     height: `calc(${minutesToLength(endMinute - startMinute)})`,
-    left: `calc(${GUTTER_REM}rem + ${dayWidth} * ${dayIndex + column / columns})`,
+    left: `calc(${GUTTER} + ${dayWidth} * ${dayIndex + column / columns})`,
     top: `calc(${HEADER} + ${minutesToLength(startMinute)})`,
     width: `calc(${dayWidth} / ${columns})`,
   };
