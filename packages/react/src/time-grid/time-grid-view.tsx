@@ -23,6 +23,7 @@ import {
   wallTime,
 } from "@usecalendar/core";
 import {
+  type ComponentPropsWithRef,
   type FocusEvent,
   Fragment,
   type KeyboardEvent,
@@ -55,6 +56,7 @@ import {
   useCalendarLocale,
 } from "../locale/locale-context.js";
 import { cn } from "../utils/cn.js";
+import { composeHandlers, mergeRefs } from "../utils/merge-props.js";
 import { AllDayLane, AllDayToggle } from "./all-day-lane.js";
 import { CurrentTimeLine } from "./current-time-line.js";
 import {
@@ -878,10 +880,10 @@ export function TimeGridView<TData = unknown>({
                           {wrap(
                             <TimeGridEvent
                               ariaKeyShortcuts={eventShortcuts}
-                              className={classNames?.event}
                               dayCount={days.length}
                               dayIndex={dayIndex}
                               editable={canEdit(segment.item)}
+                              eventClassName={classNames?.event}
                               focusKey={focusKey({
                                 day: dayIndex,
                                 eventId: segment.item.id,
@@ -910,11 +912,11 @@ export function TimeGridView<TData = unknown>({
                                 .filter(Boolean)
                                 .join(", ")}
                               look={eventLook(segment.item, now)}
-                              onClick={(element) =>
-                                openEvent(segment.item, element)
-                              }
                               onMovePointerDown={(pointer) =>
                                 drag.startMove(pointer, segment.item)
+                              }
+                              onOpen={(element) =>
+                                openEvent(segment.item, element)
                               }
                               onResizePointerDown={(pointer) =>
                                 drag.startResize(pointer, segment.item)
@@ -1094,13 +1096,14 @@ const labelSlots = (
   };
 };
 
-type TimeGridEventProps<TData> = {
+type TimeGridEventOwnProps<TData> = {
   ariaKeyShortcuts: string;
-  className: string | undefined;
   dayCount: number;
   dayIndex: number;
   /** Can be dragged and edited from the keyboard. */
   editable: boolean;
+  /** The `classNames.event` slot. */
+  eventClassName: string | undefined;
   focusKey: string;
   isActive: boolean;
   /** Being moved or resized: faded while the preview shows where it goes. */
@@ -1110,8 +1113,9 @@ type TimeGridEventProps<TData> = {
   keyboardHint: string;
   label: string;
   look: ReturnType<typeof eventLook>;
-  onClick: (element: HTMLElement) => void;
   onMovePointerDown: (pointer: PointerEvent<HTMLElement>) => void;
+  /** Opens the event (click, or Enter/Space on the focused button). */
+  onOpen: (element: HTMLElement) => void;
   onResizePointerDown: (pointer: PointerEvent<HTMLElement>) => void;
   /** Event popover trigger attributes and hover handlers (empty when the popover is off). */
   popoverProps: EventPopoverTriggerProps;
@@ -1122,13 +1126,23 @@ type TimeGridEventProps<TData> = {
   time: string;
 };
 
+/**
+ * Own props, plus whatever a `renderEventWrapper` trigger adds when it clones the element (ref, handlers, `aria-*`,
+ * `data-*`): they reach the button, merged with its own.
+ */
+type TimeGridEventProps<TData> = TimeGridEventOwnProps<TData> &
+  Omit<
+    ComponentPropsWithRef<"button">,
+    keyof TimeGridEventOwnProps<TData> | "children"
+  >;
+
 /** One timed event in a day column: a button placed by time and lane, holding the event block and resize handle. */
 function TimeGridEvent<TData>({
   ariaKeyShortcuts,
-  className,
   dayCount,
   dayIndex,
   editable,
+  eventClassName,
   focusKey: key,
   isActive,
   isDragged,
@@ -1136,8 +1150,8 @@ function TimeGridEvent<TData>({
   keyboardHint,
   label,
   look,
-  onClick,
   onMovePointerDown,
+  onOpen,
   onResizePointerDown,
   popoverProps,
   refocus,
@@ -1145,6 +1159,7 @@ function TimeGridEvent<TData>({
   segment,
   sizing,
   time,
+  ...wrapper
 }: TimeGridEventProps<TData>) {
   const {
     column,
@@ -1167,11 +1182,16 @@ function TimeGridEvent<TData>({
   return (
     <button
       {...popoverProps}
+      {...wrapper}
       aria-description={
-        editable && keyboardHint !== "" ? keyboardHint : undefined
+        editable && keyboardHint !== ""
+          ? keyboardHint
+          : wrapper["aria-description"]
       }
       aria-keyshortcuts={
-        editable && ariaKeyShortcuts !== "" ? ariaKeyShortcuts : undefined
+        editable && ariaKeyShortcuts !== ""
+          ? ariaKeyShortcuts
+          : wrapper["aria-keyshortcuts"]
       }
       aria-label={label}
       aria-pressed={isSelected}
@@ -1179,32 +1199,42 @@ function TimeGridEvent<TData>({
         "absolute z-[5] m-0 block cursor-pointer rounded-md border-0 bg-transparent p-0 text-left text-inherit outline-none ring-offset-1 ring-offset-uc-background focus-visible:z-[7] focus-visible:ring-2 focus-visible:ring-uc-ring",
         isSelected === true && "z-[6] ring-2 ring-uc-primary",
         isDragged && "opacity-40",
-        className,
+        eventClassName,
+        wrapper.className,
       )}
       data-event-id={event.id}
       data-focus-key={key}
-      onClick={(click) => {
+      onClick={composeHandlers(wrapper.onClick, (click) => {
         // The slot under the event would start a new one.
         click.stopPropagation();
-        onClick(click.currentTarget);
-      }}
-      onPointerDown={
+        onOpen(click.currentTarget);
+      })}
+      onPointerDown={composeHandlers(
+        wrapper.onPointerDown,
         editable
           ? onMovePointerDown
           : (pointer) => {
               // Not draggable, but the slot underneath mustn't start a new event either.
               pointer.stopPropagation();
-            }
-      }
-      ref={refocus}
-      style={boxStyle(
-        dayIndex,
-        dayCount,
-        startMinute,
-        drawnEnd,
-        column,
-        columns,
+            },
       )}
+      onPointerDownCapture={composeHandlers(
+        wrapper.onPointerDownCapture,
+        popoverProps.onPointerDownCapture,
+      )}
+      onPointerEnter={composeHandlers(
+        wrapper.onPointerEnter,
+        popoverProps.onPointerEnter,
+      )}
+      onPointerLeave={composeHandlers(
+        wrapper.onPointerLeave,
+        popoverProps.onPointerLeave,
+      )}
+      ref={mergeRefs(refocus, wrapper.ref)}
+      style={{
+        ...wrapper.style,
+        ...boxStyle(dayIndex, dayCount, startMinute, drawnEnd, column, columns),
+      }}
       tabIndex={isActive ? 0 : -1}
       type="button"
     >

@@ -1,11 +1,17 @@
 // @vitest-environment jsdom
 import type { CalendarEvent, CalendarView } from "@usecalendar/core";
-import { act } from "react";
+import {
+  act,
+  type ComponentProps,
+  cloneElement,
+  type ReactElement,
+} from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CalendarProvider } from "../../src/calendar/calendar-context.js";
 import { useCalendar } from "../../src/calendar/use-calendar.js";
 import type { EventPopoverOptions } from "../../src/events/event-popover.js";
+import type { RenderEventWrapperProps } from "../../src/events/render-event-wrapper.js";
 import { MonthView } from "../../src/month/month-view.js";
 import { TimeGridView } from "../../src/time-grid/time-grid-view.js";
 import "../render-hook.js";
@@ -29,6 +35,7 @@ const offsite: CalendarEvent = {
 type Props = EventPopoverOptions & {
   events?: CalendarEvent[];
   onEventClick?: (event: CalendarEvent) => void;
+  renderEventWrapper?: (props: RenderEventWrapperProps) => ReactElement;
 };
 
 function View({
@@ -243,6 +250,38 @@ describe("event popover", () => {
     act(() => vi.advanceTimersByTime(300));
     expect(dialog()).toBeNull();
   });
+
+  it.each([
+    "month",
+    "week",
+  ] as const)(
+    "opens on hover in the %s view with a renderEventWrapper trigger around the event",
+    (view) => {
+      vi.useFakeTimers();
+      const onPointerEnter = vi.fn();
+      const { container } = mount(
+        {
+          eventPopover: "hover",
+          // Like an `asChild` trigger (Radix Slot, Base UI `render`): it runs its handler and then the child's.
+          renderEventWrapper: ({ children }) => {
+            const child = children as ReactElement<ComponentProps<"button">>;
+            return cloneElement(child, {
+              onPointerEnter: (event) => {
+                onPointerEnter();
+                child.props.onPointerEnter?.(event);
+              },
+            });
+          },
+        },
+        view,
+      );
+      const button = eventButton(container, "Standup");
+      pointer(button, "pointerover", "mouse");
+      act(() => vi.advanceTimersByTime(500));
+      expect(onPointerEnter).toHaveBeenCalledOnce();
+      expect(dialog()).not.toBeNull();
+    },
+  );
 
   it("leaves clicks to the app in hover mode: a click or tap never opens it and closes a preview", () => {
     vi.useFakeTimers();

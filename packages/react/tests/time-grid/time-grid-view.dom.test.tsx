@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 import type { CalendarEvent } from "@usecalendar/core";
-import { act } from "react";
+import {
+  act,
+  type ComponentProps,
+  cloneElement,
+  createRef,
+  type ReactElement,
+} from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CalendarProvider } from "../../src/calendar/calendar-context.js";
@@ -255,6 +261,79 @@ describe("TimeGridView clicks", () => {
       endAt: "2030-01-17T11:00:00Z",
       startAt: "2030-01-17T10:00:00Z",
     });
+  });
+
+  it("hands what a renderEventWrapper trigger adds to the event button, merged with its own", () => {
+    const onEventClick = vi.fn();
+    const onSlotClick = vi.fn();
+    const onClick = vi.fn();
+    const onContextMenu = vi.fn();
+    const onPointerDown = vi.fn();
+    const onPointerEnter = vi.fn();
+    const ref = createRef<HTMLButtonElement>();
+    const { container } = mount({
+      events: [
+        standup,
+      ],
+      onEventClick,
+      onSlotClick,
+      // Like an `asChild` trigger: clones the child with its own props and ref.
+      renderEventWrapper: ({ children }) =>
+        cloneElement(
+          children as ReactElement<
+            ComponentProps<"button"> & {
+              "data-state"?: string;
+            }
+          >,
+          {
+            "aria-haspopup": "menu",
+            className: "wrapped",
+            "data-state": "closed",
+            onClick,
+            onContextMenu,
+            onPointerDown,
+            onPointerEnter,
+            ref,
+            style: {
+              color: "red",
+            },
+          },
+        ),
+    });
+    const button = byKey(container, "2:18:series:2030-01-16");
+    expect(ref.current).toBe(button);
+    expect(button.getAttribute("aria-haspopup")).toBe("menu");
+    expect(button.getAttribute("data-state")).toBe("closed");
+    expect(button.classList.contains("wrapped")).toBe(true);
+    expect(button.classList.contains("absolute")).toBe(true);
+    expect(button.style.color).toBe("red");
+    expect(button.getAttribute("style")).toContain("top:");
+    expect(button.getAttribute("aria-label")).toContain("Standup");
+
+    act(() => {
+      button.dispatchEvent(
+        new MouseEvent("contextmenu", {
+          bubbles: true,
+        }),
+      );
+      button.dispatchEvent(
+        new MouseEvent("pointerover", {
+          bubbles: true,
+        }),
+      );
+      button.click();
+    });
+    expect(onContextMenu).toHaveBeenCalledOnce();
+    expect(onPointerEnter).toHaveBeenCalledOnce();
+    expect(onClick).toHaveBeenCalledOnce();
+    expect(onEventClick).toHaveBeenCalledWith(standup);
+    expect(onSlotClick).not.toHaveBeenCalled();
+
+    // A wrapper that prevents the default keeps the click to itself.
+    onClick.mockImplementation((click: MouseEvent) => click.preventDefault());
+    act(() => button.click());
+    expect(onClick).toHaveBeenCalledTimes(2);
+    expect(onEventClick).toHaveBeenCalledOnce();
   });
 
   it("toggles the all-day lane and reports it", () => {
