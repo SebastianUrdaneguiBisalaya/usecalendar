@@ -41,10 +41,14 @@ export type CalendarEvent<TData = unknown> = {
   color?: string;
   /** Your own payload for this event, handed back untouched in callbacks. */
   data?: TData;
+  /** Longer text about the event, shown in the event popover (line breaks are kept). Never drawn on the grid. */
+  description?: string;
   /** Exclusive end, as an ISO 8601 instant with an offset (`2026-11-18T16:00:00Z`). */
   endAt: string;
   /** Unique among the events passed to the calendar. Used for keys and keyboard focus. */
   id: string;
+  /** Where the event takes place (a room, an address, a meeting link), shown in the event popover. */
+  location?: string;
   /** Inclusive start, as an ISO 8601 instant with an offset (`2026-11-18T15:00:00Z`). */
   startAt: string;
   /** @defaultValue "confirmed" */

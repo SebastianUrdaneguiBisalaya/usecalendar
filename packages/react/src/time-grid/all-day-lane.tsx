@@ -1,6 +1,7 @@
 import type { CalendarEvent, WeekSegment } from "@usecalendar/core";
 import { Fragment, type ReactElement, type ReactNode } from "react";
 import { EventChip, type EventChipProps } from "../events/event-chip.js";
+import type { EventPopoverTriggerProps } from "../events/event-popover.js";
 import { eventLook } from "../events/event-style.js";
 import { useCalendarLocale } from "../locale/locale-context.js";
 import { cn } from "../utils/cn.js";
@@ -20,8 +21,11 @@ type AllDayLaneProps<TData> = {
   lanes: number;
   /** Epoch ms, to mute past events; null while unknown. */
   now: number | null;
-  onEventClick: ((event: CalendarEvent<TData>) => void) | undefined;
   onExpand: () => void;
+  /** Clicking an event: `onEventClick` and the event popover. */
+  onOpen: (event: CalendarEvent<TData>, element: HTMLElement) => void;
+  /** Event popover trigger attributes and hover handlers for an event. */
+  popoverProps: (event: CalendarEvent<TData>) => EventPopoverTriggerProps;
   renderAllDayEvent: ((chip: EventChipProps<TData>) => ReactNode) | undefined;
   segments: readonly WeekSegment<CalendarEvent<TData>>[];
   wrap: (children: ReactElement, event: CalendarEvent<TData>) => ReactNode;
@@ -37,8 +41,9 @@ export function AllDayLane<TData>({
   hiddenByColumn,
   lanes,
   now,
-  onEventClick,
   onExpand,
+  onOpen,
+  popoverProps,
   renderAllDayEvent,
   segments,
   wrap,
@@ -74,11 +79,12 @@ export function AllDayLane<TData>({
           <Fragment key={segment.item.id}>
             {wrap(
               <button
+                {...popoverProps(segment.item)}
                 className={cn(
                   "pointer-events-auto absolute m-0 cursor-pointer border-0 bg-transparent px-0.5 py-0 text-left text-inherit",
                   classNames?.allDayEvent,
                 )}
-                onClick={() => onEventClick?.(segment.item)}
+                onClick={(click) => onOpen(segment.item, click.currentTarget)}
                 style={{
                   height,
                   left: percent(segment.firstColumn),

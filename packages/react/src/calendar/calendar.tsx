@@ -130,6 +130,7 @@ export function Calendar<TData = unknown>(props: CalendarProps<TData>) {
     defaultView,
     draftRange,
     editable,
+    eventPopover,
     events,
     formatters,
     hotkeyHandlers,
@@ -150,6 +151,7 @@ export function Calendar<TData = unknown>(props: CalendarProps<TData>) {
     onViewChange,
     renderAllDayEvent,
     renderEvent,
+    renderEventPopover,
     renderEventWrapper,
     renderMonthEvent,
     renderMorePopover,
@@ -223,10 +225,12 @@ export function Calendar<TData = unknown>(props: CalendarProps<TData>) {
               {calendar.view === "month" ? (
                 <MonthView
                   classNames={classNames?.month}
+                  eventPopover={eventPopover}
                   events={events}
                   onDayClick={onDayClick}
                   onEventClick={onEventClick}
                   renderEvent={renderMonthEvent}
+                  renderEventPopover={renderEventPopover}
                   renderEventWrapper={renderEventWrapper}
                   renderMorePopover={renderMorePopover}
                 />
@@ -238,6 +242,7 @@ export function Calendar<TData = unknown>(props: CalendarProps<TData>) {
                   defaultEventDuration={defaultEventDuration}
                   draftRange={draftRange}
                   editable={editable}
+                  eventPopover={eventPopover}
                   events={events}
                   hourHeight={hourHeight}
                   isEventEditable={isEventEditable}
@@ -248,6 +253,7 @@ export function Calendar<TData = unknown>(props: CalendarProps<TData>) {
                   onSlotClick={onSlotClick}
                   renderAllDayEvent={renderAllDayEvent}
                   renderEvent={renderEvent}
+                  renderEventPopover={renderEventPopover}
                   renderEventWrapper={renderEventWrapper}
                   scrollToTime={scrollToTime}
                   selectedEventId={selectedEventId}
