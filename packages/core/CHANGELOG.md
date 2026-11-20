@@ -1,5 +1,11 @@
 # @usecalendar/core
 
+## 0.3.0
+
+### Minor Changes
+
+- e19faf1: `CalendarEvent` gains optional `description` and `location` fields, shown in the React event popover.
+
 ## 0.2.0
 
 ### Minor Changes

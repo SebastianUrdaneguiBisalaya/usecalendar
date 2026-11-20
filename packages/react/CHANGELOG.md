@@ -1,5 +1,16 @@
 # @usecalendar/react
 
+## 0.3.0
+
+### Minor Changes
+
+- e19faf1: Add an optional event details popover. `eventPopover="click" | "hover" | "both"` on `Calendar`, `MonthView` and `TimeGridView` shows an event's color, title, date and time, location and description, using the native Popover API. `renderEventPopover` replaces its content, and new `classNames` slots (`eventPopover*`) and an `eventWhen` formatter customize it.
+
+### Patch Changes
+
+- Updated dependencies [e19faf1]
+  - @usecalendar/core@0.3.0
+
 ## 0.2.0
 
 ### Minor Changes
