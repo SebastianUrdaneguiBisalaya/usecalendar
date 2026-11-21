@@ -1,5 +1,7 @@
 import {
+  type ComponentPropsWithRef,
   type PointerEvent,
+  type ReactElement,
   type ReactNode,
   useCallback,
   useEffect,
@@ -9,6 +11,7 @@ import {
 } from "react";
 import type { EventPopoverTrigger } from "../events/event-popover.js";
 import { cn } from "../utils/cn.js";
+import { composeHandlers, mergeRefs } from "../utils/merge-props.js";
 import { DAY_HEADER_REM } from "./grid-geometry.js";
 
 /** What opens the time zone popover; the same choices as {@link EventPopoverTrigger}. */
@@ -20,6 +23,21 @@ export type TimeZonePopoverProps = {
   close: () => void;
   /** The default content (the full label and description); reuse it in yours. */
   details: ReactNode;
+  /** Second line, if any, e.g. `"GMT-5"`. */
+  description: string | null;
+  /** First line, e.g. `"Perú"` or the zone's short name. */
+  label: string;
+  /** IANA time zone of the column, e.g. `"America/Lima"`. */
+  timeZone: string;
+};
+
+/** Props of `renderTimeZoneWrapper`. */
+export type RenderTimeZoneWrapperProps = {
+  /**
+   * The time zone header's clickable button; render it inside your wrapper (e.g. as a Radix `PopoverTrigger asChild`).
+   * Props and a ref added to it reach the button and run before its own handlers.
+   */
+  children: ReactElement;
   /** Second line, if any, e.g. `"GMT-5"`. */
   description: string | null;
   /** First line, e.g. `"Perú"` or the zone's short name. */
@@ -49,6 +67,22 @@ export type TimeZonePopoverOptions = {
   renderTimeZonePopover?:
     | ((props: TimeZonePopoverProps) => ReactNode)
     | undefined;
+  /**
+   * Wraps each time zone header, like `renderEventWrapper` does for events, so you can use your own popover (Radix,
+   * Base UI, …) with its own open state, positioning and closing. The header renders as a button for your trigger.
+   * When set, the calendar's built-in popover (`timeZonePopover`, `renderTimeZonePopover`) is not used.
+   *
+   * @example
+   * renderTimeZoneWrapper={({ children, label, description }) => (
+   *   <Popover>
+   *     <PopoverTrigger asChild>{children}</PopoverTrigger>
+   *     <PopoverContent>{label} {description}</PopoverContent>
+   *   </Popover>
+   * )}
+   */
+  renderTimeZoneWrapper?:
+    | ((props: RenderTimeZoneWrapperProps) => ReactNode)
+    | undefined;
 };
 
 /** The two lines of a time zone header. */
@@ -60,6 +94,38 @@ export type ZoneName = {
 /** Delay before hovering opens the popover, and before leaving closes it (so the pointer can cross the gap). */
 const HOVER_OPEN_MS = 400;
 const HOVER_CLOSE_MS = 150;
+
+type ZoneButtonOwnProps = {
+  className: string;
+};
+
+/** Own props, plus whatever a `renderTimeZoneWrapper` trigger adds when it clones the element. */
+type ZoneButtonProps = ZoneButtonOwnProps &
+  Omit<ComponentPropsWithRef<"button">, keyof ZoneButtonOwnProps> & {
+    /** The header's own click handler; runs after one added from outside. */
+    ownClick?: (() => void) | undefined;
+    /** The header's own ref. */
+    ownRef?: ((node: HTMLButtonElement | null) => void) | undefined;
+  };
+
+function ZoneButton({
+  className,
+  onClick,
+  ownClick,
+  ownRef,
+  ref,
+  ...rest
+}: ZoneButtonProps) {
+  return (
+    <button
+      className={className}
+      onClick={composeHandlers(onClick, ownClick)}
+      ref={mergeRefs(ref, ownRef)}
+      type="button"
+      {...rest}
+    />
+  );
+}
 
 type TimeZoneHeaderProps = TimeZonePopoverOptions & {
   className: string | undefined;
@@ -79,6 +145,7 @@ export function TimeZoneHeader({
   name,
   popoverClassName,
   renderTimeZonePopover,
+  renderTimeZoneWrapper,
   timeZone,
   timeZonePopover = false,
 }: TimeZoneHeaderProps) {
@@ -99,11 +166,12 @@ export function TimeZoneHeader({
   const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
   );
-  const enabled = timeZonePopover !== false;
+  const wrapped = renderTimeZoneWrapper !== undefined;
+  const enabled = timeZonePopover !== false && !wrapped;
   const opensOnClick =
-    timeZonePopover === "click" || timeZonePopover === "both";
+    enabled && (timeZonePopover === "click" || timeZonePopover === "both");
   const opensOnHover =
-    timeZonePopover === "hover" || timeZonePopover === "both";
+    enabled && (timeZonePopover === "hover" || timeZonePopover === "both");
   const shown = enabled ? open : null;
   const pinned = shown?.pinned ?? false;
 
@@ -240,6 +308,9 @@ export function TimeZoneHeader({
       }
     : {};
 
+  const buttonClassName =
+    "flex min-w-0 max-w-full cursor-pointer flex-col items-center justify-center border-0 bg-transparent p-0 text-center text-inherit leading-[inherit] [font:inherit]";
+
   return (
     <>
       <div
@@ -251,12 +322,26 @@ export function TimeZoneHeader({
           height: `${DAY_HEADER_REM}rem`,
         }}
       >
-        {opensOnClick ? (
-          <button
+        {wrapped ? (
+          renderTimeZoneWrapper({
+            children: (
+              <ZoneButton
+                className={buttonClassName}
+                ownRef={setTrigger}
+              >
+                {text}
+              </ZoneButton>
+            ),
+            description: name.description,
+            label: name.label,
+            timeZone,
+          })
+        ) : opensOnClick ? (
+          <ZoneButton
             aria-expanded={shown !== null}
             aria-haspopup="dialog"
-            className="flex min-w-0 max-w-full cursor-pointer flex-col items-center justify-center border-0 bg-transparent p-0 text-center text-inherit leading-[inherit] [font:inherit]"
-            onClick={() =>
+            className={buttonClassName}
+            ownClick={() =>
               setOpen((state) =>
                 state?.pinned
                   ? null
@@ -265,12 +350,11 @@ export function TimeZoneHeader({
                     },
               )
             }
-            ref={setTrigger}
-            type="button"
+            ownRef={setTrigger}
             {...hoverProps}
           >
             {text}
-          </button>
+          </ZoneButton>
         ) : (
           <div
             className="flex min-w-0 max-w-full flex-col items-center justify-center"

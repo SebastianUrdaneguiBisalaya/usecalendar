@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act } from "react";
+import { act, cloneElement, type ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -125,5 +125,26 @@ describe("time zone popover", () => {
       "America/Lima",
     );
     expect(dialog()?.textContent).toContain("GMT-5");
+  });
+
+  it("wraps the header in a consumer trigger and skips the built-in popover", () => {
+    const clicks: string[] = [];
+    const container = mount({
+      renderTimeZoneWrapper: ({ children, timeZone }) =>
+        cloneElement(
+          children as ReactElement<{
+            onClick: () => void;
+          }>,
+          {
+            onClick: () => clicks.push(timeZone),
+          },
+        ),
+      timeZonePopover: "click",
+    });
+    act(() => container.querySelector("button")?.click());
+    expect(clicks).toEqual([
+      "America/Lima",
+    ]);
+    expect(dialog()).toBeNull();
   });
 });

@@ -91,6 +91,7 @@ export type {
 } from "./time-grid/time-grid-view.js";
 export { TimeGridView } from "./time-grid/time-grid-view.js";
 export type {
+  RenderTimeZoneWrapperProps,
   TimeZonePopoverOptions,
   TimeZonePopoverProps,
   TimeZonePopoverTrigger,
