@@ -1,5 +1,12 @@
 # @usecalendar/react
 
+## 0.5.0
+
+### Minor Changes
+
+- 556b8e9: Add a second line to the time zone headers of `TimeGridView` and `<Calendar>`: `secondaryTimeZones` entries take an optional `description` under `label`, the new `timeZoneLabel` prop does the same for the calendar's own column, and `classNames.timeGrid.timeZoneName` styles them. Both lines truncate and are read by screen readers as one text.
+- e77a509: Center the two-line time zone headers of `TimeGridView` and `<Calendar>` vertically and horizontally, and add `timeZonePopover` (`"click"`, `"hover"`, `"both"`) to read a truncated header in full. `renderTimeZonePopover` replaces its content and `classNames.timeGrid.timeZonePopover` styles it.
+
 ## 0.4.0
 
 ### Minor Changes
