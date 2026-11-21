@@ -163,6 +163,7 @@ export function Calendar<TData = unknown>(props: CalendarProps<TData>) {
     slotMinutes,
     snapMinutes,
     style,
+    timeZoneLabel,
     timeFormat,
     timeZone,
     toolbar = true,
@@ -262,6 +263,7 @@ export function Calendar<TData = unknown>(props: CalendarProps<TData>) {
                   selectedEventId={selectedEventId}
                   slotMinutes={slotMinutes}
                   snapMinutes={snapMinutes}
+                  timeZoneLabel={timeZoneLabel}
                   workingHours={workingHours}
                 />
               )}

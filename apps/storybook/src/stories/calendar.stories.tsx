@@ -122,6 +122,24 @@ export const SecondaryTimeZones: Story = {
   },
 };
 
+/** Two-line headers: a label with the offset under it, for every column. */
+export const TimeZoneTwoLines: Story = {
+  args: {
+    defaultView: "week",
+    secondaryTimeZones: [
+      {
+        description: "GMT-5",
+        label: "Perú",
+        timeZone: "America/Lima",
+      },
+    ],
+    timeZoneLabel: {
+      description: "GMT+0",
+      label: "Reino Unido",
+    },
+  },
+};
+
 /** `workingHours`: Monday to Friday, 9:00 to 18:00; every other slot is muted and has `data-off-hours`. */
 export const WorkingHours: Story = {
   args: {

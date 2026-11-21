@@ -435,6 +435,59 @@ describe("EventBlock", () => {
     expect(html).toContain("--uc-time-grid-gutter:12rem");
   });
 
+  it("shows a second, smaller line under the label, read as one text", () => {
+    const html = render({
+      classNames: {
+        timeZoneName: "my-zone",
+      },
+      secondaryTimeZones: [
+        {
+          description: "GMT-5",
+          label: "Perú",
+          timeZone: "America/Lima",
+        },
+      ],
+      timeZoneLabel: {
+        description: "GMT+0",
+        label: "Reino Unido",
+      },
+    });
+    expect(html).toMatch(/>Perú<\/span><span class="sr-only">, <\/span>/);
+    expect(html).toContain(">GMT-5<");
+    expect(html).toContain(">Reino Unido<");
+    expect(html).toContain(">GMT+0<");
+    expect(count(html, "my-zone")).toBe(2);
+  });
+
+  it("keeps one line without a description", () => {
+    const html = render({
+      secondaryTimeZones: [
+        {
+          label: "Perú",
+          timeZone: "America/Lima",
+        },
+      ],
+    });
+    expect(html).toContain(">Perú<");
+    expect(html).not.toContain('sr-only">, <');
+  });
+
+  it("truncates both lines so the header keeps its height", () => {
+    const html = render({
+      secondaryTimeZones: [
+        {
+          description: "A very long description that does not fit",
+          label: "A very long label that does not fit",
+          timeZone: "America/Lima",
+        },
+      ],
+    });
+    // Both lines, plus the calendar's own one-line header.
+    expect(count(html, "block max-w-full truncate")).toBe(3);
+    expect(html).toContain("overflow-hidden");
+    expect(html).toContain("height:3rem");
+  });
+
   it("leaves the gutter alone without secondary time zones", () => {
     const html = render();
     expect(html).not.toContain(`>${utcName}<`);
