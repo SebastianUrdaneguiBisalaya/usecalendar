@@ -75,6 +75,11 @@ import {
   hourHeightRem,
   slotsPerDay,
 } from "./grid-geometry.js";
+import {
+  TimeZoneHeader,
+  type TimeZonePopoverOptions,
+  type ZoneName,
+} from "./time-zone-header.js";
 import { useTimeGridDrag } from "./use-time-grid-drag.js";
 
 /** Rows the all-day lane keeps when collapsed. */
@@ -191,130 +196,135 @@ export type TimeGridViewClassNames = EventPopoverClassNames & {
    * `label` line and, when set, the `description` line under it.
    */
   timeZoneName?: string | undefined;
+  /** The popover of a time zone header (`timeZonePopover`). */
+  timeZonePopover?: string | undefined;
   /** The weekday name in a day header. */
   weekday?: string | undefined;
 };
 
 /** Props of {@link TimeGridView}. */
-export type TimeGridViewProps<TData = unknown> = EventPopoverOptions<TData> & {
-  /** Whether the all-day lane is collapsed to two rows (controlled). Pair it with `onAllDayCollapsedChange`. */
-  allDayCollapsed?: boolean | undefined;
-  /** Extra classes for the root element, merged after the defaults. */
-  className?: string | undefined;
-  /** Extra classes per part. */
-  classNames?: TimeGridViewClassNames | undefined;
-  /** The initial collapsed state of the all-day lane when uncontrolled. @defaultValue false */
-  defaultAllDayCollapsed?: boolean | undefined;
-  /** Length in minutes of the range `onSlotClick` proposes. @defaultValue 60 */
-  defaultEventDuration?: number | undefined;
-  /**
-   * A new event's times to preview on the grid, e.g. while your form for it is open after `onSlotClick` or
-   * `onRangeSelect`. All-day ranges (24 hours or more) aren't previewed.
-   */
-  draftRange?: TimeRange | null | undefined;
-  /**
-   * Whether events can be moved and resized (pointer and keyboard). Editing also needs `onEventChange`.
-   *
-   * @defaultValue true
-   */
-  editable?: boolean | undefined;
-  /**
-   * The events to show. Timed events are placed by their times; all-day ones, and timed ones lasting 24 hours or
-   * more, go in the all-day lane. Recurring events must already be expanded into occurrences.
-   */
-  events: readonly CalendarEvent<TData>[];
-  /** Turns editing off for single events, e.g. read-only calendars or events the user doesn't own. */
-  isEventEditable?: ((event: CalendarEvent<TData>) => boolean) | undefined;
-  /** Called when the user expands or collapses the all-day lane. */
-  onAllDayCollapsedChange?: ((collapsed: boolean) => void) | undefined;
-  /**
-   * Called when the user moves or resizes an event (by dragging, or with the keyboard shortcuts), with its proposed
-   * new times. The calendar doesn't change the event: update your `events` to accept it, or leave them to reject it.
-   */
-  onEventChange?:
-    | ((event: CalendarEvent<TData>, range: TimeRange) => void)
-    | undefined;
-  /**
-   * Called when an event is clicked, or the `openFocused` shortcut (Enter/Space) is pressed on it (also when that
-   * opens the event popover).
-   */
-  onEventClick?: ((event: CalendarEvent<TData>) => void) | undefined;
-  /** Called when the user drags over empty slots, with the swept range (snapped to `snapMinutes`). */
-  onRangeSelect?: ((range: TimeRange) => void) | undefined;
-  /**
-   * Called when an empty slot is clicked, or the `openFocused` shortcut (Enter/Space) is pressed on it, with a range
-   * of `defaultEventDuration` minutes starting at the slot.
-   */
-  onSlotClick?: ((range: TimeRange) => void) | undefined;
-  /**
-   * Draws the bar of an all-day event, replacing the default `EventChip`. The result goes inside a button that
-   * handles the click.
-   */
-  renderAllDayEvent?: ((chip: EventChipProps<TData>) => ReactNode) | undefined;
-  /**
-   * Draws one timed event, replacing the default `EventBlock`. Receives the block's props (spread them into an
-   * `EventBlock` to keep the default look). The result goes inside a button that places it, handles the click and
-   * the drag, and holds the resize handle.
-   *
-   * @example
-   * renderEvent={(block) => <EventBlock {...block} classNames={{ title: "font-semibold" }} />}
-   */
-  renderEvent?: ((block: EventBlockProps<TData>) => ReactNode) | undefined;
-  /** Wraps each clickable event (timed and all-day), e.g. in a context menu. */
-  renderEventWrapper?:
-    | ((props: RenderEventWrapperProps<TData>) => ReactNode)
-    | undefined;
-  /**
-   * Height of one hour in the grid: a number in rem, or any CSS length (`"64px"`, `"4rem"`). Every row, event and
-   * the current-time line scale with it; `slotMinutes` splits it into rows. Numbers in rem follow the user's font size.
-   *
-   * @defaultValue 3
-   * @example
-   * hourHeight={4} // roomier: 64px per hour at the default font size
-   * hourHeight="40px" // denser: fits a working day on a small screen
-   */
-  hourHeight?: number | string | undefined;
-  /**
-   * Time to scroll to when the grid mounts.
-   *
-   * @defaultValue one hour before the current hour
-   */
-  scrollToTime?: Temporal.PlainTime | undefined;
-  /**
-   * More hour columns, left of the calendar's own, showing the same instants in other time zones. Each column header
-   * shows `label`, or the zone's short name (`formatters.timeZoneName`, e.g. `"GMT-5"`), with an optional smaller
-   * `description` line under it; the calendar's column gets its name too (see `timeZoneLabel`). Zones whose offset differs by a fraction of an hour (India, Nepal) show minutes, e.g. `"7:30 PM"`.
-   *
-   * @example
-   * secondaryTimeZones={[{ timeZone: "Asia/Kolkata", label: "IST" }]}
-   * @example
-   * // Two lines: "Perú" with "GMT-5" under it.
-   * secondaryTimeZones={[{ timeZone: "America/Lima", label: "Perú", description: "GMT-5" }]}
-   */
-  secondaryTimeZones?: readonly TimeGridTimeZone[] | undefined;
-  /**
-   * Header of the calendar's own hour column, shown when there are `secondaryTimeZones`, so every column looks the
-   * same. Same fields as a `secondaryTimeZones` entry.
-   *
-   * @example
-   * timeZoneLabel={{ label: "España", description: "GMT+1" }}
-   */
-  timeZoneLabel?: TimeGridZoneLabel | undefined;
-  /** The event shown as selected (`aria-pressed` and a ring), e.g. the one open in your side panel. */
-  selectedEventId?: string | null | undefined;
-  /** Length of one row in minutes; must divide 60 evenly. The hour height (`hourHeight`) doesn't change. @defaultValue 30 */
-  slotMinutes?: number | undefined;
-  /** Step that dragged and keyboard-edited times snap to; must divide 60 evenly. @defaultValue 15 */
-  snapMinutes?: number | undefined;
-  /**
-   * Working hours, in the calendar's time zone. Slots starting outside them get `data-off-hours` and a muted
-   * background (`classNames.offHours`). Only marks the grid: it doesn't stop anything from being scheduled there.
-   *
-   * @example
-   * workingHours={{ days: [1, 2, 3, 4, 5], start: Temporal.PlainTime.from("09:00"), end: Temporal.PlainTime.from("18:00") }}
-   */
-  workingHours?: WorkingHours | undefined;
-};
+export type TimeGridViewProps<TData = unknown> = EventPopoverOptions<TData> &
+  TimeZonePopoverOptions & {
+    /** Whether the all-day lane is collapsed to two rows (controlled). Pair it with `onAllDayCollapsedChange`. */
+    allDayCollapsed?: boolean | undefined;
+    /** Extra classes for the root element, merged after the defaults. */
+    className?: string | undefined;
+    /** Extra classes per part. */
+    classNames?: TimeGridViewClassNames | undefined;
+    /** The initial collapsed state of the all-day lane when uncontrolled. @defaultValue false */
+    defaultAllDayCollapsed?: boolean | undefined;
+    /** Length in minutes of the range `onSlotClick` proposes. @defaultValue 60 */
+    defaultEventDuration?: number | undefined;
+    /**
+     * A new event's times to preview on the grid, e.g. while your form for it is open after `onSlotClick` or
+     * `onRangeSelect`. All-day ranges (24 hours or more) aren't previewed.
+     */
+    draftRange?: TimeRange | null | undefined;
+    /**
+     * Whether events can be moved and resized (pointer and keyboard). Editing also needs `onEventChange`.
+     *
+     * @defaultValue true
+     */
+    editable?: boolean | undefined;
+    /**
+     * The events to show. Timed events are placed by their times; all-day ones, and timed ones lasting 24 hours or
+     * more, go in the all-day lane. Recurring events must already be expanded into occurrences.
+     */
+    events: readonly CalendarEvent<TData>[];
+    /** Turns editing off for single events, e.g. read-only calendars or events the user doesn't own. */
+    isEventEditable?: ((event: CalendarEvent<TData>) => boolean) | undefined;
+    /** Called when the user expands or collapses the all-day lane. */
+    onAllDayCollapsedChange?: ((collapsed: boolean) => void) | undefined;
+    /**
+     * Called when the user moves or resizes an event (by dragging, or with the keyboard shortcuts), with its proposed
+     * new times. The calendar doesn't change the event: update your `events` to accept it, or leave them to reject it.
+     */
+    onEventChange?:
+      | ((event: CalendarEvent<TData>, range: TimeRange) => void)
+      | undefined;
+    /**
+     * Called when an event is clicked, or the `openFocused` shortcut (Enter/Space) is pressed on it (also when that
+     * opens the event popover).
+     */
+    onEventClick?: ((event: CalendarEvent<TData>) => void) | undefined;
+    /** Called when the user drags over empty slots, with the swept range (snapped to `snapMinutes`). */
+    onRangeSelect?: ((range: TimeRange) => void) | undefined;
+    /**
+     * Called when an empty slot is clicked, or the `openFocused` shortcut (Enter/Space) is pressed on it, with a range
+     * of `defaultEventDuration` minutes starting at the slot.
+     */
+    onSlotClick?: ((range: TimeRange) => void) | undefined;
+    /**
+     * Draws the bar of an all-day event, replacing the default `EventChip`. The result goes inside a button that
+     * handles the click.
+     */
+    renderAllDayEvent?:
+      | ((chip: EventChipProps<TData>) => ReactNode)
+      | undefined;
+    /**
+     * Draws one timed event, replacing the default `EventBlock`. Receives the block's props (spread them into an
+     * `EventBlock` to keep the default look). The result goes inside a button that places it, handles the click and
+     * the drag, and holds the resize handle.
+     *
+     * @example
+     * renderEvent={(block) => <EventBlock {...block} classNames={{ title: "font-semibold" }} />}
+     */
+    renderEvent?: ((block: EventBlockProps<TData>) => ReactNode) | undefined;
+    /** Wraps each clickable event (timed and all-day), e.g. in a context menu. */
+    renderEventWrapper?:
+      | ((props: RenderEventWrapperProps<TData>) => ReactNode)
+      | undefined;
+    /**
+     * Height of one hour in the grid: a number in rem, or any CSS length (`"64px"`, `"4rem"`). Every row, event and
+     * the current-time line scale with it; `slotMinutes` splits it into rows. Numbers in rem follow the user's font size.
+     *
+     * @defaultValue 3
+     * @example
+     * hourHeight={4} // roomier: 64px per hour at the default font size
+     * hourHeight="40px" // denser: fits a working day on a small screen
+     */
+    hourHeight?: number | string | undefined;
+    /**
+     * Time to scroll to when the grid mounts.
+     *
+     * @defaultValue one hour before the current hour
+     */
+    scrollToTime?: Temporal.PlainTime | undefined;
+    /**
+     * More hour columns, left of the calendar's own, showing the same instants in other time zones. Each column header
+     * shows `label`, or the zone's short name (`formatters.timeZoneName`, e.g. `"GMT-5"`), with an optional smaller
+     * `description` line under it; the calendar's column gets its name too (see `timeZoneLabel`). Zones whose offset differs by a fraction of an hour (India, Nepal) show minutes, e.g. `"7:30 PM"`.
+     *
+     * @example
+     * secondaryTimeZones={[{ timeZone: "Asia/Kolkata", label: "IST" }]}
+     * @example
+     * // Two lines: "Perú" with "GMT-5" under it.
+     * secondaryTimeZones={[{ timeZone: "America/Lima", label: "Perú", description: "GMT-5" }]}
+     */
+    secondaryTimeZones?: readonly TimeGridTimeZone[] | undefined;
+    /**
+     * Header of the calendar's own hour column, shown when there are `secondaryTimeZones`, so every column looks the
+     * same. Same fields as a `secondaryTimeZones` entry.
+     *
+     * @example
+     * timeZoneLabel={{ label: "España", description: "GMT+1" }}
+     */
+    timeZoneLabel?: TimeGridZoneLabel | undefined;
+    /** The event shown as selected (`aria-pressed` and a ring), e.g. the one open in your side panel. */
+    selectedEventId?: string | null | undefined;
+    /** Length of one row in minutes; must divide 60 evenly. The hour height (`hourHeight`) doesn't change. @defaultValue 30 */
+    slotMinutes?: number | undefined;
+    /** Step that dragged and keyboard-edited times snap to; must divide 60 evenly. @defaultValue 15 */
+    snapMinutes?: number | undefined;
+    /**
+     * Working hours, in the calendar's time zone. Slots starting outside them get `data-off-hours` and a muted
+     * background (`classNames.offHours`). Only marks the grid: it doesn't stop anything from being scheduled there.
+     *
+     * @example
+     * workingHours={{ days: [1, 2, 3, 4, 5], start: Temporal.PlainTime.from("09:00"), end: Temporal.PlainTime.from("18:00") }}
+     */
+    workingHours?: WorkingHours | undefined;
+  };
 
 /** The header text of an hour column: a first line and an optional smaller second line. */
 export type TimeGridZoneLabel = {
@@ -378,6 +388,8 @@ export function TimeGridView<TData = unknown>({
   scrollToTime,
   secondaryTimeZones,
   timeZoneLabel,
+  timeZonePopover,
+  renderTimeZonePopover,
   selectedEventId,
   slotMinutes = SLOT_MINUTES,
   snapMinutes = SNAP_MINUTES,
@@ -923,9 +935,13 @@ export function TimeGridView<TData = unknown>({
                 gridRow: 1,
               }}
             >
-              <TimeZoneName
+              <TimeZoneHeader
                 className={classNames?.timeZoneName}
                 name={column.name}
+                popoverClassName={classNames?.timeZonePopover}
+                renderTimeZonePopover={renderTimeZonePopover}
+                timeZone={column.timeZone}
+                timeZonePopover={timeZonePopover}
               />
             </div>
           ))}
@@ -939,9 +955,13 @@ export function TimeGridView<TData = unknown>({
             }}
           >
             {zoneColumns.mainName !== null && (
-              <TimeZoneName
+              <TimeZoneHeader
                 className={classNames?.timeZoneName}
                 name={zoneColumns.mainName}
+                popoverClassName={classNames?.timeZonePopover}
+                renderTimeZonePopover={renderTimeZonePopover}
+                timeZone={timeZone}
+                timeZonePopover={timeZonePopover}
               />
             )}
             {collapsible && (
@@ -1408,46 +1428,6 @@ const labelTimeZones = (
     },
   };
 };
-
-/** The two lines of a time zone header. */
-type ZoneName = {
-  description: string | null;
-  label: string;
-};
-
-/**
- * A time zone's name in the header cell of its hour column: `label` and, under it, a smaller `description`. Both
- * lines are truncated, so the cell keeps the height of a day header. Screen readers get one text, "Perú, GMT-5".
- */
-function TimeZoneName({
-  className,
-  name,
-}: {
-  className: string | undefined;
-  name: ZoneName;
-}) {
-  return (
-    <div
-      className={cn(
-        "flex min-w-0 flex-col items-end justify-end overflow-hidden pr-2 pb-1 text-[0.65rem] text-uc-muted-foreground leading-tight",
-        className,
-      )}
-      style={{
-        height: `${DAY_HEADER_REM}rem`,
-      }}
-    >
-      <span className="block max-w-full truncate">{name.label}</span>
-      {name.description !== null && (
-        <>
-          <span className="sr-only">, </span>
-          <span className="block max-w-full truncate text-[0.6rem] opacity-80">
-            {name.description}
-          </span>
-        </>
-      )}
-    </div>
-  );
-}
 
 type TimeGridEventOwnProps<TData> = {
   ariaKeyShortcuts: string;

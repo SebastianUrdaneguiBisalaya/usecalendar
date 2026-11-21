@@ -90,3 +90,8 @@ export type {
   TimeGridZoneLabel,
 } from "./time-grid/time-grid-view.js";
 export { TimeGridView } from "./time-grid/time-grid-view.js";
+export type {
+  TimeZonePopoverOptions,
+  TimeZonePopoverProps,
+  TimeZonePopoverTrigger,
+} from "./time-grid/time-zone-header.js";

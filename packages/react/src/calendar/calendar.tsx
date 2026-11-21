@@ -164,6 +164,8 @@ export function Calendar<TData = unknown>(props: CalendarProps<TData>) {
     snapMinutes,
     style,
     timeZoneLabel,
+    timeZonePopover,
+    renderTimeZonePopover,
     timeFormat,
     timeZone,
     toolbar = true,
@@ -258,12 +260,14 @@ export function Calendar<TData = unknown>(props: CalendarProps<TData>) {
                   renderEvent={renderEvent}
                   renderEventPopover={renderEventPopover}
                   renderEventWrapper={renderEventWrapper}
+                  renderTimeZonePopover={renderTimeZonePopover}
                   scrollToTime={scrollToTime}
                   secondaryTimeZones={secondaryTimeZones}
                   selectedEventId={selectedEventId}
                   slotMinutes={slotMinutes}
                   snapMinutes={snapMinutes}
                   timeZoneLabel={timeZoneLabel}
+                  timeZonePopover={timeZonePopover}
                   workingHours={workingHours}
                 />
               )}
