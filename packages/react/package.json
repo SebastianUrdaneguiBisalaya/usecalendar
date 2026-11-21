@@ -1,6 +1,6 @@
 {
   "name": "@usecalendar/react",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "React components and hooks for usecalendar: a Google Calendar-style month, week and day calendar plus a compact day strip, styled with Tailwind CSS and fully driven by props.",
   "keywords": [
     "calendar",
