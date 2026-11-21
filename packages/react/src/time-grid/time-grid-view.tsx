@@ -186,6 +186,11 @@ export type TimeGridViewClassNames = EventPopoverClassNames & {
   slot?: string | undefined;
   /** Today's day number (the filled badge), added to `dayNumber`. */
   today?: string | undefined;
+  /**
+   * The time zone name in the header of an hour column (`secondaryTimeZones` and the calendar's own). It holds the
+   * `label` line and, when set, the `description` line under it.
+   */
+  timeZoneName?: string | undefined;
   /** The weekday name in a day header. */
   weekday?: string | undefined;
 };
@@ -277,13 +282,24 @@ export type TimeGridViewProps<TData = unknown> = EventPopoverOptions<TData> & {
   scrollToTime?: Temporal.PlainTime | undefined;
   /**
    * More hour columns, left of the calendar's own, showing the same instants in other time zones. Each column header
-   * shows `label`, or the zone's short name (`formatters.timeZoneName`, e.g. `"GMT-5"`); the calendar's column gets
-   * its name too. Zones whose offset differs by a fraction of an hour (India, Nepal) show minutes, e.g. `"7:30 PM"`.
+   * shows `label`, or the zone's short name (`formatters.timeZoneName`, e.g. `"GMT-5"`), with an optional smaller
+   * `description` line under it; the calendar's column gets its name too (see `timeZoneLabel`). Zones whose offset differs by a fraction of an hour (India, Nepal) show minutes, e.g. `"7:30 PM"`.
    *
    * @example
    * secondaryTimeZones={[{ timeZone: "Asia/Kolkata", label: "IST" }]}
+   * @example
+   * // Two lines: "Perú" with "GMT-5" under it.
+   * secondaryTimeZones={[{ timeZone: "America/Lima", label: "Perú", description: "GMT-5" }]}
    */
   secondaryTimeZones?: readonly TimeGridTimeZone[] | undefined;
+  /**
+   * Header of the calendar's own hour column, shown when there are `secondaryTimeZones`, so every column looks the
+   * same. Same fields as a `secondaryTimeZones` entry.
+   *
+   * @example
+   * timeZoneLabel={{ label: "España", description: "GMT+1" }}
+   */
+  timeZoneLabel?: TimeGridZoneLabel | undefined;
   /** The event shown as selected (`aria-pressed` and a ring), e.g. the one open in your side panel. */
   selectedEventId?: string | null | undefined;
   /** Length of one row in minutes; must divide 60 evenly. The hour height (`hourHeight`) doesn't change. @defaultValue 30 */
@@ -300,10 +316,19 @@ export type TimeGridViewProps<TData = unknown> = EventPopoverOptions<TData> & {
   workingHours?: WorkingHours | undefined;
 };
 
-/** A time zone shown in an extra hour column of the {@link TimeGridView}. */
-export type TimeGridTimeZone = {
-  /** Column header. @defaultValue the zone's short name from `formatters.timeZoneName`, e.g. `"GMT-5"` */
+/** The header text of an hour column: a first line and an optional smaller second line. */
+export type TimeGridZoneLabel = {
+  /**
+   * Smaller second line under `label`, e.g. `"GMT-5"` under `"Perú"`. Both lines are truncated to the column and
+   * read by screen readers as one text ("Perú, GMT-5"). Without it the header has one line.
+   */
+  description?: string | undefined;
+  /** First line. @defaultValue the zone's short name from `formatters.timeZoneName`, e.g. `"GMT-5"` */
   label?: string | undefined;
+};
+
+/** A time zone shown in an extra hour column of the {@link TimeGridView}. */
+export type TimeGridTimeZone = TimeGridZoneLabel & {
   /** IANA time zone, e.g. `"Asia/Kolkata"`. */
   timeZone: string;
 };
@@ -352,6 +377,7 @@ export function TimeGridView<TData = unknown>({
   renderEventWrapper,
   scrollToTime,
   secondaryTimeZones,
+  timeZoneLabel,
   selectedEventId,
   slotMinutes = SLOT_MINUTES,
   snapMinutes = SNAP_MINUTES,
@@ -515,16 +541,20 @@ export function TimeGridView<TData = unknown>({
   );
   // Keyed by content, so a new array with the same zones (an inline prop) doesn't redo the labels.
   const zonesKey = JSON.stringify(
-    (secondaryTimeZones ?? []).map(({ label, timeZone: zone }) => [
+    (secondaryTimeZones ?? []).map(({ description, label, timeZone: zone }) => [
       zone,
       label ?? null,
+      description ?? null,
     ]),
   );
+  const mainLabel = timeZoneLabel?.label ?? null;
+  const mainDescription = timeZoneLabel?.description ?? null;
   const zoneColumns = useMemo(
     () =>
       labelTimeZones(
         JSON.parse(zonesKey) as [
           string,
+          string | null,
           string | null,
         ][],
         days,
@@ -535,11 +565,17 @@ export function TimeGridView<TData = unknown>({
           timeFormat,
           timeZone,
         },
+        {
+          description: mainDescription,
+          label: mainLabel,
+        },
       ),
     [
       days,
       formatters,
       locale,
+      mainDescription,
+      mainLabel,
       slotMinutes,
       timeFormat,
       timeZone,
@@ -887,7 +923,10 @@ export function TimeGridView<TData = unknown>({
                 gridRow: 1,
               }}
             >
-              <TimeZoneName name={column.name} />
+              <TimeZoneName
+                className={classNames?.timeZoneName}
+                name={column.name}
+              />
             </div>
           ))}
           <div
@@ -900,7 +939,10 @@ export function TimeGridView<TData = unknown>({
             }}
           >
             {zoneColumns.mainName !== null && (
-              <TimeZoneName name={zoneColumns.mainName} />
+              <TimeZoneName
+                className={classNames?.timeZoneName}
+                name={zoneColumns.mainName}
+              />
             )}
             {collapsible && (
               <AllDayToggle
@@ -1279,7 +1321,7 @@ type TimeZoneColumn = {
   /** Visible labels of the slots that start an hour of the calendar's zone. */
   hours: string[];
   /** Header text. */
-  name: string;
+  name: ZoneName;
   /** Screen-reader labels of the other slots. */
   rows: string[];
   timeZone: string;
@@ -1295,6 +1337,7 @@ const labelTimeZones = (
   zones: readonly (readonly [
     string,
     string | null,
+    string | null,
   ])[],
   days: readonly Temporal.PlainDate[],
   slotMinutes: number,
@@ -1306,9 +1349,13 @@ const labelTimeZones = (
   }: Pick<CalendarLocale, "formatters" | "locale" | "timeFormat"> & {
     timeZone: string;
   },
+  main: {
+    description: string | null;
+    label: string | null;
+  },
 ): {
   columns: TimeZoneColumn[];
-  mainName: string | null;
+  mainName: ZoneName | null;
 } => {
   const first = days[0];
   // A zone listed twice would only repeat its column (and its React key).
@@ -1332,7 +1379,7 @@ const labelTimeZones = (
     (_, slot) => wallTime(first, slot * slotMinutes, timeZone).toInstant(),
   );
   return {
-    columns: unique.map(([zone, label]) => {
+    columns: unique.map(([zone, label, description]) => {
       const zoneContext = {
         ...context,
         timeZone: zone,
@@ -1347,25 +1394,57 @@ const labelTimeZones = (
             ? formatters.hour(time.hour, zoneContext)
             : (rows[slot] ?? ""),
         ),
-        name: label ?? formatTimeZoneName(formatters, first, zoneContext),
+        name: {
+          description,
+          label: label ?? formatTimeZoneName(formatters, first, zoneContext),
+        },
         rows,
         timeZone: zone,
       };
     }),
-    mainName: formatTimeZoneName(formatters, first, context),
+    mainName: {
+      description: main.description,
+      label: main.label ?? formatTimeZoneName(formatters, first, context),
+    },
   };
 };
 
-/** A time zone's name in the header cell of its hour column. */
-function TimeZoneName({ name }: { name: string }) {
+/** The two lines of a time zone header. */
+type ZoneName = {
+  description: string | null;
+  label: string;
+};
+
+/**
+ * A time zone's name in the header cell of its hour column: `label` and, under it, a smaller `description`. Both
+ * lines are truncated, so the cell keeps the height of a day header. Screen readers get one text, "Perú, GMT-5".
+ */
+function TimeZoneName({
+  className,
+  name,
+}: {
+  className: string | undefined;
+  name: ZoneName;
+}) {
   return (
     <div
-      className="flex items-end justify-end pr-2 pb-1 text-[0.65rem] text-uc-muted-foreground"
+      className={cn(
+        "flex min-w-0 flex-col items-end justify-end overflow-hidden pr-2 pb-1 text-[0.65rem] text-uc-muted-foreground leading-tight",
+        className,
+      )}
       style={{
         height: `${DAY_HEADER_REM}rem`,
       }}
     >
-      {name}
+      <span className="block max-w-full truncate">{name.label}</span>
+      {name.description !== null && (
+        <>
+          <span className="sr-only">, </span>
+          <span className="block max-w-full truncate text-[0.6rem] opacity-80">
+            {name.description}
+          </span>
+        </>
+      )}
     </div>
   );
 }

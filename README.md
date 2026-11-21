@@ -255,7 +255,8 @@ The complete calendar: a toolbar plus the month, week or day view. `Calendar` is
 | `hourHeight` | `number \| string` | `3` | Height of one hour in the week and day views: a number in rem, or any CSS length (`"64px"`). Rows, events and the current-time line scale with it. |
 | `snapMinutes` | `number` | `15` | Step dragged and keyboard-edited times snap to. Must divide 60. |
 | `scrollToTime` | `Temporal.PlainTime` | one hour before now | Where the time grid scrolls on mount. |
-| `secondaryTimeZones` | `{ timeZone: string; label?: string }[]` | | More hour columns, left of the calendar's own, showing the same instants in other zones. Headers show `label` or the zone's short name (`"GMT-5"`); half-hour offsets keep their minutes (`"5:30 AM"`). |
+| `secondaryTimeZones` | `{ timeZone: string; label?: string; description?: string }[]` | | More hour columns, left of the calendar's own, showing the same instants in other zones. Headers show `label` or the zone's short name (`"GMT-5"`), plus an optional smaller `description` line under it (`{ label: "Perú", description: "GMT-5" }`); both truncate and are read as one text ("Perú, GMT-5"). Half-hour offsets keep their minutes (`"5:30 AM"`). Style the header with `classNames.timeGrid.timeZoneName`. |
+| `timeZoneLabel` | `{ label?: string; description?: string }` | | Same two-line header for the calendar's own hour column, shown when there are `secondaryTimeZones`. |
 | `workingHours` | `WorkingHours` | | `{ days, start, end }` in the calendar's zone (`days` are ISO weekdays, 1 = Monday). Slots starting outside get `data-off-hours` and a muted background. |
 | `allDayCollapsed` / `defaultAllDayCollapsed` / `onAllDayCollapsedChange` | `boolean` | `false` | Whether the all-day lane is collapsed to two rows. |
 
