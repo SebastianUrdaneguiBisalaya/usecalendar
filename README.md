@@ -259,6 +259,7 @@ The complete calendar: a toolbar plus the month, week or day view. `Calendar` is
 | `timeZoneLabel` | `{ label?: string; description?: string }` | | Same two-line header for the calendar's own hour column, shown when there are `secondaryTimeZones`. |
 | `timeZonePopover` | `"click" \| "hover" \| "both" \| false` | `false` | Opens a popover with the full label and description of a time zone header, uncut. `"hover"` previews with a mouse only; `"click"` and `"both"` also work with touch and keyboard. Closes with Escape or a click outside. |
 | `renderTimeZonePopover` | `({ details, label, description, timeZone, close }) => ReactNode` | | Replaces the popover's content (`details` is the default). The calendar still opens, places and closes it. Style it with `classNames.timeGrid.timeZonePopover`. |
+| `renderTimeZoneWrapper` | `({ children, label, description, timeZone }) => ReactNode` | | Wraps each time zone header, like `renderEventWrapper`, to use your own popover (e.g. Radix `PopoverTrigger asChild`) with its own open state. `children` is the header button; props and ref added to it are merged. When set, the built-in popover is not used. |
 | `workingHours` | `WorkingHours` | | `{ days, start, end }` in the calendar's zone (`days` are ISO weekdays, 1 = Monday). Slots starting outside get `data-off-hours` and a muted background. |
 | `allDayCollapsed` / `defaultAllDayCollapsed` / `onAllDayCollapsedChange` | `boolean` | `false` | Whether the all-day lane is collapsed to two rows. |
 

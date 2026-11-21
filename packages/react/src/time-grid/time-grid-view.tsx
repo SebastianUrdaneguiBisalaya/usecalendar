@@ -390,6 +390,7 @@ export function TimeGridView<TData = unknown>({
   timeZoneLabel,
   timeZonePopover,
   renderTimeZonePopover,
+  renderTimeZoneWrapper,
   selectedEventId,
   slotMinutes = SLOT_MINUTES,
   snapMinutes = SNAP_MINUTES,
@@ -940,6 +941,7 @@ export function TimeGridView<TData = unknown>({
                 name={column.name}
                 popoverClassName={classNames?.timeZonePopover}
                 renderTimeZonePopover={renderTimeZonePopover}
+                renderTimeZoneWrapper={renderTimeZoneWrapper}
                 timeZone={column.timeZone}
                 timeZonePopover={timeZonePopover}
               />
@@ -960,6 +962,7 @@ export function TimeGridView<TData = unknown>({
                 name={zoneColumns.mainName}
                 popoverClassName={classNames?.timeZonePopover}
                 renderTimeZonePopover={renderTimeZonePopover}
+                renderTimeZoneWrapper={renderTimeZoneWrapper}
                 timeZone={timeZone}
                 timeZonePopover={timeZonePopover}
               />

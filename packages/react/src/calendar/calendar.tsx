@@ -166,6 +166,7 @@ export function Calendar<TData = unknown>(props: CalendarProps<TData>) {
     timeZoneLabel,
     timeZonePopover,
     renderTimeZonePopover,
+    renderTimeZoneWrapper,
     timeFormat,
     timeZone,
     toolbar = true,
@@ -261,6 +262,7 @@ export function Calendar<TData = unknown>(props: CalendarProps<TData>) {
                   renderEventPopover={renderEventPopover}
                   renderEventWrapper={renderEventWrapper}
                   renderTimeZonePopover={renderTimeZonePopover}
+                  renderTimeZoneWrapper={renderTimeZoneWrapper}
                   scrollToTime={scrollToTime}
                   secondaryTimeZones={secondaryTimeZones}
                   selectedEventId={selectedEventId}
