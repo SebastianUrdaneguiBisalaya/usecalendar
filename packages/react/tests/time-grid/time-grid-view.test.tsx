@@ -459,6 +459,41 @@ describe("EventBlock", () => {
     expect(count(html, "my-zone")).toBe(2);
   });
 
+  it("centers the header text vertically and horizontally in its cell", () => {
+    const html = render({
+      secondaryTimeZones: [
+        {
+          description: "GMT-5",
+          label: "Perú",
+          timeZone: "America/Lima",
+        },
+      ],
+    });
+    expect(html).toContain("items-center justify-center");
+    expect(html).toContain("text-center");
+    expect(html).not.toContain("justify-end pr-2");
+  });
+
+  it("renders no popover trigger unless timeZonePopover is set", () => {
+    const secondaryTimeZones = [
+      {
+        label: "Perú",
+        timeZone: "America/Lima",
+      },
+    ];
+    expect(
+      render({
+        secondaryTimeZones,
+      }),
+    ).not.toContain('aria-haspopup="dialog"');
+    expect(
+      render({
+        secondaryTimeZones,
+        timeZonePopover: "click",
+      }),
+    ).toContain('aria-haspopup="dialog"');
+  });
+
   it("keeps one line without a description", () => {
     const html = render({
       secondaryTimeZones: [

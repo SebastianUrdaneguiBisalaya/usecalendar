@@ -140,6 +140,25 @@ export const TimeZoneTwoLines: Story = {
   },
 };
 
+/** `timeZonePopover`: hover or click a long header to read it uncut; `renderTimeZonePopover` customizes it. */
+export const TimeZonePopover: Story = {
+  args: {
+    defaultView: "week",
+    secondaryTimeZones: [
+      {
+        description: "GMT-5 (Peru Standard Time)",
+        label: "Perú, Lima y alrededores",
+        timeZone: "America/Lima",
+      },
+    ],
+    timeZoneLabel: {
+      description: "GMT+0",
+      label: "Reino Unido",
+    },
+    timeZonePopover: "both",
+  },
+};
+
 /** `workingHours`: Monday to Friday, 9:00 to 18:00; every other slot is muted and has `data-off-hours`. */
 export const WorkingHours: Story = {
   args: {
