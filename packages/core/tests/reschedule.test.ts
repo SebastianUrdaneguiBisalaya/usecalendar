@@ -181,6 +181,24 @@ describe("moveRange", () => {
       startAt: "2026-03-10T14:30:00Z",
     });
   });
+
+  it("returns the range as given, unsnapped, when the shift rounds to zero", () => {
+    const unaligned = {
+      endAt: "2026-03-10T16:07:00.000Z",
+      startAt: "2026-03-10T15:07:00.000Z",
+    }; // 10:07–11:07 in Lima
+    for (const by of [
+      {
+        days: 0,
+        minutes: 0,
+      },
+      {
+        days: 0.2,
+        minutes: -0.4,
+      },
+    ])
+      expect(moveRange(unaligned, by, LIMA)).toEqual(unaligned);
+  });
 });
 
 describe("resizeRange", () => {

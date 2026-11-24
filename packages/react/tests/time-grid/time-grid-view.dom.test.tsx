@@ -490,6 +490,78 @@ describe("TimeGridView pointer drags", () => {
     });
   });
 
+  it("doesn't report a move dropped back where it started", () => {
+    const onEventChange = vi.fn();
+    const { container } = mount({
+      events: [
+        standup,
+      ],
+      onEventChange,
+    });
+    const button = byKey(container, "2:18:series:2030-01-16");
+    pointer(button, "pointerdown", at(2, 9 * 60 + 10));
+    pointer(grid(container), "pointermove", at(3, 11 * 60));
+    pointer(grid(container), "pointermove", at(2, 9 * 60 + 10));
+    pointer(grid(container), "pointerup", at(2, 9 * 60 + 10));
+    expect(onEventChange).not.toHaveBeenCalled();
+  });
+
+  it("doesn't report a drop at the same instants written in another format", () => {
+    const onEventChange = vi.fn();
+    const millis: CalendarEvent = {
+      ...standup,
+      endAt: "2030-01-16T10:00:00.000Z",
+      startAt: "2030-01-16T09:00:00.000Z",
+    };
+    const { container } = mount({
+      events: [
+        millis,
+      ],
+      onEventChange,
+    });
+    const button = byKey(container, "2:18:series:2030-01-16");
+    const grabbed = at(2, 9 * 60 + 10);
+    pointer(button, "pointerdown", grabbed);
+    // Three minutes down (past the drag threshold sideways, in the same column): 9:03 snaps back to 9:00, which
+    // the move writes as `…T09:00:00Z`.
+    const dropped = {
+      ...at(2, 9 * 60 + 13),
+      clientX: grabbed.clientX + 10,
+    };
+    pointer(grid(container), "pointermove", dropped);
+    pointer(grid(container), "pointerup", dropped);
+    expect(onEventChange).not.toHaveBeenCalled();
+  });
+
+  it("doesn't snap an unaligned event dropped back where it started", () => {
+    const onEventChange = vi.fn();
+    const unaligned: CalendarEvent = {
+      ...standup,
+      endAt: "2030-01-16T11:07:00Z",
+      startAt: "2030-01-16T10:07:00Z",
+    };
+    const { container } = mount({
+      events: [
+        unaligned,
+      ],
+      onEventChange,
+    });
+    const button = byKey(container, "2:20:series:2030-01-16");
+    pointer(button, "pointerdown", at(2, 10 * 60 + 20));
+    pointer(grid(container), "pointermove", at(2, 12 * 60));
+    pointer(grid(container), "pointermove", at(2, 10 * 60 + 20));
+    pointer(grid(container), "pointerup", at(2, 10 * 60 + 20));
+    expect(onEventChange).not.toHaveBeenCalled();
+
+    const handle = container.querySelector("[data-uc-resize-handle]");
+    if (handle === null) throw new Error("No resize handle");
+    pointer(handle, "pointerdown", at(2, 11 * 60 + 7));
+    pointer(grid(container), "pointermove", at(2, 12 * 60 + 30));
+    pointer(grid(container), "pointermove", at(2, 11 * 60 + 7));
+    pointer(grid(container), "pointerup", at(2, 11 * 60 + 7));
+    expect(onEventChange).not.toHaveBeenCalled();
+  });
+
   it("cancels a drag with Escape, consuming the key", () => {
     const onEventChange = vi.fn();
     const { container } = mount({

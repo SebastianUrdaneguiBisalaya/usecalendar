@@ -10,6 +10,7 @@ import {
 } from "@usecalendar/core";
 import { type PointerEvent, useEffect, useRef, useState } from "react";
 import { useCalendarKeymap } from "../hotkeys/keymap-context.js";
+import { sameRange } from "../utils/same-range.js";
 
 /** A spot on the grid: day column index and minutes from midnight, unsnapped. */
 type GridPoint = {
@@ -32,6 +33,7 @@ type Drag<TData> =
   | {
       at: GridPoint;
       event: CalendarEvent<TData>;
+      grab: GridPoint;
       kind: "resize";
     };
 
@@ -132,6 +134,15 @@ export const useTimeGridDrag = <TData>({
           snapMinutes,
         );
       case "resize":
+        // Back where it was grabbed: keep the end as it is instead of snapping an unaligned one.
+        if (
+          current.at.day === current.grab.day &&
+          Math.round(current.at.minute - current.grab.minute) === 0
+        )
+          return {
+            endAt: current.event.endAt,
+            startAt: current.event.startAt,
+          };
         return resizeRange(
           current.event,
           wallTime(day, current.at.minute, timeZone),
@@ -227,12 +238,7 @@ export const useTimeGridDrag = <TData>({
         // Pointer moves fire many times per snapped step: re-render only when the preview actually moves.
         // The ref keeps the exact position for the drop either way.
         const after = rangeOf(state.drag);
-        if (
-          before !== null &&
-          after !== null &&
-          before.startAt === after.startAt &&
-          before.endAt === after.endAt
-        )
+        if (before !== null && after !== null && sameRange(before, after))
           return;
         setDrag(state.drag);
       },
@@ -285,6 +291,7 @@ export const useTimeGridDrag = <TData>({
       begin(pointer, (at) => ({
         at,
         event,
+        grab: at,
         kind: "resize",
       }));
     },
