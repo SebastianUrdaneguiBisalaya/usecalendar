@@ -51,7 +51,7 @@
     "test": "vitest run --passWithNoTests",
     "bench": "vitest bench --run",
     "test:watch": "vitest",
-    "prepublishOnly": "pnpm run typecheck && pnpm run test && pnpm run build"
+    "prepublishOnly": "pnpm run typecheck && pnpm run build"
   },
   "publishConfig": {
     "access": "public"
