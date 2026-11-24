@@ -60,6 +60,7 @@ import {
 } from "../locale/locale-context.js";
 import { cn } from "../utils/cn.js";
 import { composeHandlers, mergeRefs } from "../utils/merge-props.js";
+import { sameRange } from "../utils/same-range.js";
 import { AllDayLane, AllDayToggle } from "./all-day-lane.js";
 import { CurrentTimeLine } from "./current-time-line.js";
 import {
@@ -482,7 +483,8 @@ export function TimeGridView<TData = unknown>({
     (isEventEditable?.(event) ?? true);
 
   const applyChange = (event: CalendarEvent<TData>, range: TimeRange) => {
-    if (range.startAt === event.startAt && range.endAt === event.endAt) return;
+    // Same instants written differently (`.000Z`, another offset) are no change either.
+    if (sameRange(range, event)) return;
     onEventChange?.(event, range);
   };
   const drag = useTimeGridDrag<TData>({

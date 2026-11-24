@@ -51,7 +51,8 @@ export const wallTime = (
 /**
  * Shifts a range by whole days (keeping its wall-clock time in `timeZone`, even across DST changes) and by
  * minutes, then snaps the start to the grid. The duration doesn't change. Fractional values (from pointer
- * drags) are rounded.
+ * drags) are rounded. A shift that rounds to zero returns the range as given, unsnapped: dropping an event where
+ * it was never moves it.
  *
  * @param snapMinutes - Grid step; must divide 60 evenly. Defaults to {@link SNAP_MINUTES}.
  */
@@ -64,6 +65,11 @@ export const moveRange = (
   timeZone: string,
   snapMinutes = SNAP_MINUTES,
 ): TimeRange => {
+  if (Math.round(by.days) === 0 && Math.round(by.minutes) === 0)
+    return {
+      endAt: range.endAt,
+      startAt: range.startAt,
+    };
   const start = Temporal.Instant.from(range.startAt).toZonedDateTimeISO(
     timeZone,
   );
