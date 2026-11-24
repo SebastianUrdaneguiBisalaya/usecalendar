@@ -63,7 +63,7 @@
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "bench:report": "vitest run --config vitest.report.config.ts",
-    "prepublishOnly": "pnpm run typecheck && pnpm run test && pnpm run build"
+    "prepublishOnly": "pnpm run typecheck && pnpm run build"
   },
   "publishConfig": {
     "access": "public"

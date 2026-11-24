@@ -12,8 +12,9 @@ import {
 // build). jsdom lays nothing out and paints nothing: this is the JavaScript side of a frame (rendering + layout
 // math), the part the library controls. Real frame rates are checked by hand in Storybook (see CONTRIBUTING.md).
 //
-// Budgets are about 5× the time measured on a laptop (noted next to each), so they fail on a clear regression (a
-// render that suddenly redoes much more work), not on a slow machine. `pnpm run bench:report` records the numbers.
+// Budgets are about 10× the time measured on a laptop (noted next to each), so they fail on a clear regression (a
+// render that suddenly redoes much more work), not on a slow machine: each is a single run, and a busy CI runner
+// has taken 730 ms for the 140 ms month mount. `pnpm run bench:report` records the numbers.
 
 let mounted: ProfiledCalendar | undefined;
 afterEach(() => {
@@ -37,7 +38,7 @@ describe("render budgets", () => {
     const time = take();
     expect(time).toBeGreaterThan(0);
     // Measured ≈135 ms (development build, jsdom).
-    expect(time).toBeLessThan(700);
+    expect(time).toBeLessThan(1500);
   });
 
   it("re-renders the week view after one of 500 events moves", () => {
@@ -54,7 +55,7 @@ describe("render budgets", () => {
       events: moveFirstTimed(events),
     });
     // Measured ≈40 ms: the layout is memoized, but every slot and event still re-renders.
-    expect(calendar.take()).toBeLessThan(200);
+    expect(calendar.take()).toBeLessThan(400);
   });
 
   it("navigates the week view to the next week with 500 events", () => {
@@ -65,7 +66,7 @@ describe("render budgets", () => {
       }),
     });
     // Measured ≈20 ms.
-    expect(clickNext(calendar)).toBeLessThan(120);
+    expect(clickNext(calendar)).toBeLessThan(250);
   });
 
   it("mounts the month view with 2000 events", () => {
@@ -77,6 +78,6 @@ describe("render budgets", () => {
       }),
     });
     // Measured ≈140 ms.
-    expect(take()).toBeLessThan(700);
+    expect(take()).toBeLessThan(1500);
   });
 });
